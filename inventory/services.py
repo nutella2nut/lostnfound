@@ -40,8 +40,9 @@ def analyze_item_images(files: Iterable) -> Mapping[str, str]:
     image_b64 = base64.b64encode(image_bytes).decode("utf-8")
     content_type = getattr(image_file, "content_type", "image/jpeg") or "image/jpeg"
 
-    # Gemini API endpoint
-    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    # Gemini API endpoint - using gemini-2.5-flash (available model from your API)
+    model_name = "gemini-2.5-flash"
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
 
     prompt = (
         "You are helping catalog lost-and-found items for a reception desk. "
@@ -74,6 +75,22 @@ def analyze_item_images(files: Iterable) -> Mapping[str, str]:
     try:
         resp = requests.post(endpoint, json=body, timeout=30)
         if resp.status_code != 200:
+            # If model not found, try to list available models for debugging
+            if resp.status_code == 404:
+                try:
+                    list_models_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+                    models_resp = requests.get(list_models_url, timeout=10)
+                    if models_resp.status_code == 200:
+                        models_data = models_resp.json()
+                        available_models = [m.get("name", "") for m in models_data.get("models", [])]
+                        logger.warning(
+                            "Model %s not found. Available models: %s",
+                            model_name,
+                            ", ".join(available_models[:10]),  # Show first 10
+                        )
+                except Exception:
+                    pass  # Ignore errors when listing models
+            
             logger.error(
                 "Gemini Vision API HTTP error %s: %s",
                 resp.status_code,

@@ -302,6 +302,12 @@
         });
     }
     
+    // Track AI-generated values to detect when to regenerate
+    let lastAITitle = '';
+    let lastAIDescription = '';
+    let isAIGeneratedTitle = false;
+    let isAIGeneratedDescription = false;
+    
     function analyzeImages() {
         const formData = new FormData();
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
@@ -325,6 +331,11 @@
             // Clear AI status if no images
             document.getElementById('ai-status-title').textContent = '';
             document.getElementById('ai-status-desc').textContent = '';
+            // Reset AI tracking flags
+            isAIGeneratedTitle = false;
+            isAIGeneratedDescription = false;
+            lastAITitle = '';
+            lastAIDescription = '';
             return;
         }
         
@@ -333,11 +344,18 @@
         const descField = document.querySelector('#id_description');
         const titleStatus = document.getElementById('ai-status-title');
         const descStatus = document.getElementById('ai-status-desc');
-        const originalTitle = titleField.value;
-        const originalDesc = descField.value;
+        const currentTitle = titleField.value;
+        const currentDesc = descField.value;
         
-        // Only auto-fill if fields are empty
-        if (originalTitle && originalDesc) {
+        // Determine if we should update fields:
+        // 1. Field is empty (always update)
+        // 2. Field was previously AI-generated and matches last AI value (regenerate)
+        const shouldUpdateTitle = !currentTitle || (isAIGeneratedTitle && currentTitle === lastAITitle);
+        const shouldUpdateDescription = !currentDesc || (isAIGeneratedDescription && currentDesc === lastAIDescription);
+        
+        // If user manually edited fields (they don't match AI values), don't overwrite
+        if (!shouldUpdateTitle && !shouldUpdateDescription && currentTitle && currentDesc) {
+            // Fields were manually edited, don't regenerate
             titleStatus.textContent = '';
             descStatus.textContent = '';
             return;
@@ -363,34 +381,38 @@
         })
         .then(data => {
             console.log('AI response:', data);
-            let filledTitle = false;
-            let filledDesc = false;
             
-            if (data.title && !originalTitle) {
+            // Update title if field is empty or was AI-generated
+            if (data.title && shouldUpdateTitle) {
                 titleField.value = data.title;
-                filledTitle = true;
+                lastAITitle = data.title;
+                isAIGeneratedTitle = true;
                 titleStatus.textContent = '✓ AI-generated from image';
                 titleStatus.className = 'text-success d-block';
-            } else if (data.title) {
-                titleStatus.textContent = 'AI suggestion available (field already filled)';
+            } else if (data.title && !shouldUpdateTitle) {
+                // AI suggestion available but field was manually edited
+                titleStatus.textContent = 'AI suggestion available (field manually edited)';
                 titleStatus.className = 'text-muted d-block';
             } else {
                 titleStatus.textContent = '';
             }
             
-            if (data.description && !originalDesc) {
+            // Update description if field is empty or was AI-generated
+            if (data.description && shouldUpdateDescription) {
                 descField.value = data.description;
-                filledDesc = true;
+                lastAIDescription = data.description;
+                isAIGeneratedDescription = true;
                 descStatus.textContent = '✓ AI-generated from image';
                 descStatus.className = 'text-success d-block';
-            } else if (data.description) {
-                descStatus.textContent = 'AI suggestion available (field already filled)';
+            } else if (data.description && !shouldUpdateDescription) {
+                // AI suggestion available but field was manually edited
+                descStatus.textContent = 'AI suggestion available (field manually edited)';
                 descStatus.className = 'text-muted d-block';
             } else {
                 descStatus.textContent = '';
             }
             
-            if (!filledTitle && !filledDesc && (!data.title && !data.description)) {
+            if (!data.title && !data.description) {
                 titleStatus.textContent = 'No AI suggestions available';
                 titleStatus.className = 'text-warning d-block';
                 descStatus.textContent = 'No AI suggestions available';
@@ -466,6 +488,28 @@
                     todayBtn.classList.remove('btn-success');
                     todayBtn.classList.add('btn-outline-secondary');
                 }, 500);
+            });
+        }
+        
+        // Track manual edits to detect when user changes AI-generated values
+        const titleField = document.querySelector('#id_title');
+        const descField = document.querySelector('#id_description');
+        
+        if (titleField) {
+            titleField.addEventListener('input', function() {
+                // If user manually edits, mark as not AI-generated
+                if (this.value !== lastAITitle) {
+                    isAIGeneratedTitle = false;
+                }
+            });
+        }
+        
+        if (descField) {
+            descField.addEventListener('input', function() {
+                // If user manually edits, mark as not AI-generated
+                if (this.value !== lastAIDescription) {
+                    isAIGeneratedDescription = false;
+                }
             });
         }
     }
