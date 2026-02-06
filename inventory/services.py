@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 def analyze_item_images(files: Iterable) -> Mapping[str, str]:
     """
     Call Google Gemini Vision API to suggest a title and description
-    for a lost-and-found item based on one uploaded image.
+    for a lost-and-found item based on uploaded images.
+    Analyzes ALL provided images to get a comprehensive understanding of the item.
     """
     # Use Google Gemini API key
     api_key = getattr(settings, "GOOGLE_API_KEY", "")
@@ -24,33 +25,51 @@ def analyze_item_images(files: Iterable) -> Mapping[str, str]:
     if not files:
         return {}
 
-    # Use only the first image for now
-    image_file = files[0]
+    # Process ALL images, not just the first one
+    image_parts = []
+    for image_file in files:
+        try:
+            # Read file bytes
+            image_file.seek(0)
+            image_bytes = image_file.read()
+            image_file.seek(0)
+        except Exception:
+            logger.exception("Failed to read image file for vision analysis")
+            continue
 
-    try:
-        # Read file bytes
-        image_file.seek(0)
-        image_bytes = image_file.read()
-        image_file.seek(0)
-    except Exception:
-        logger.exception("Failed to read image file for vision analysis")
+        # Encode as base64 for Gemini API
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+        content_type = getattr(image_file, "content_type", "image/jpeg") or "image/jpeg"
+        
+        image_parts.append({
+            "inline_data": {
+                "mime_type": content_type,
+                "data": image_b64,
+            }
+        })
+    
+    if not image_parts:
+        logger.warning("No valid images to analyze")
         return {}
-
-    # Encode as base64 for Gemini API
-    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-    content_type = getattr(image_file, "content_type", "image/jpeg") or "image/jpeg"
 
     # Gemini API endpoint - using gemini-2.5-flash (available model from your API)
     model_name = "gemini-2.5-flash"
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
 
+    # Update prompt to mention multiple images
+    image_count_text = f"{len(image_parts)} image" if len(image_parts) == 1 else f"{len(image_parts)} images"
     prompt = (
-        "You are helping catalog lost-and-found items for a reception desk. "
-        "Given an image of an item, respond with JSON only, with this exact shape:\n"
+        f"You are helping catalog lost-and-found items for a reception desk. "
+        f"Given {image_count_text} of the same item from different angles/views, analyze ALL images comprehensively "
+        f"to provide the most accurate identification. Consider all visible details across all images. "
+        f"Respond with JSON only, with this exact shape:\n"
         '{ "title": "short, specific title", '
         '"description": "detailed description (format varies by category - see rules below)", '
         '"category": "one of: Electronics, Bags and Carry, Sports and clothing, '
         'Bottles and containers, Documents and Id\\"s, Notebooks/books, Other/Misc" }.\n\n'
+        "IMPORTANT: Analyze ALL images together. If different images show different aspects (e.g., one shows a case, another shows the device screen), "
+        "use the most identifying features from ALL images to determine what the item actually is. "
+        "Do not be biased toward the first image - consider all images equally.\n\n"
         "DESCRIPTION FORMATTING RULES BY CATEGORY:\n\n"
         "1. NOTEBOOKS/BOOKS: "
         "If it's a TISB notebook (identified by 'the international school bangalore' on cover), "
@@ -75,18 +94,13 @@ def analyze_item_images(files: Iterable) -> Mapping[str, str]:
         "Do not include any explanation or text outside the JSON. Return only valid JSON."
     )
 
+    # Build parts array with prompt followed by all images
+    parts = [{"text": prompt}] + image_parts
+
     body = {
         "contents": [
             {
-                "parts": [
-                    {"text": prompt},
-                    {
-                        "inline_data": {
-                            "mime_type": content_type,
-                            "data": image_b64,
-                        }
-                    },
-                ]
+                "parts": parts
             }
         ],
         "generationConfig": {
