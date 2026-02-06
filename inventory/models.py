@@ -39,6 +39,8 @@ class Item(models.Model):
         blank=True,
         related_name="items_created",
     )
+    claimed_by_name = models.CharField(max_length=255, blank=True, help_text="Name of person who claimed this item")
+    claimed_at = models.DateTimeField(null=True, blank=True, help_text="When this item was claimed")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

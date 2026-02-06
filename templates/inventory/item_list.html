@@ -1,88 +1,242 @@
-{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Trace - Lost & Found</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900">
+<!-- SIDEBAR: The 7 Sections -->
+<div class="flex min-h-screen flex-nowrap">
+  <aside class="m-4 flex hidden w-80 flex-col rounded-[2.5rem] bg-[#0F172A] shadow-2xl xl:flex">
+    <div class="p-10 pt-12">
+      <!-- LOGO -->
+      <div class="mb-10 flex items-center gap-4 px-2 select-none">
+        <!-- Icon -->
+        <div class="relative h-14 w-14">
+          <!-- Gradient Pin -->
+          <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500 shadow-xl"></div>
+          <!-- Magnifier Handle -->
+          <div class="absolute -bottom-1 -left-1 h-8 w-4 rotate-45 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
+          <!-- Robot Face -->
+          <div class="absolute inset-2 flex items-center justify-center rounded-full bg-[#0F172A]">
+            <svg viewBox="0 0 24 24" class="h-7 w-7 text-cyan-400" fill="currentColor">
+              <rect x="4" y="6" width="16" height="12" rx="4" />
+              <circle cx="9" cy="12" r="1.3" />
+              <circle cx="15" cy="12" r="1.3" />
+              <rect x="11" y="2" width="2" height="3" rx="1" />
+            </svg>
+          </div>
+        </div>
+        <!-- Text -->
+        <div class="leading-tight">
+          <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-3xl font-black tracking-tight text-transparent">Trace</h1>
+          <p class="text-xs font-bold tracking-widest text-slate-400 uppercase">Lost & Found • AI Powered</p>
+        </div>
+      </div>
 
-{% block content %}
-<h1 class="mb-4">Lost &amp; Found Items</h1>
-
-<form method="get" class="row g-3 mb-4">
-    <div class="col-md-4">
-        <label class="form-label">Search</label>
-        <input type="text" name="q" class="form-control" value="{{ request.GET.q }}" placeholder="Title or description">
+      <nav class="space-y-1">
+        <!-- All Items (Default) -->
+        <a href="{% url 'inventory:item_list' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if not current_category %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+          <span class="font-bold">All Items</span>
+        </a>
+        <!-- Electronics -->
+        <a href="{% url 'inventory:item_list' %}?category=ELECTRONICS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'ELECTRONICS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+          <span class="font-medium">Electronics</span>
+        </a>
+        <!-- Bags & Carry -->
+        <a href="{% url 'inventory:item_list' %}?category=BAGS_AND_CARRY{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'BAGS_AND_CARRY' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+          <span class="font-medium">Bags & Carry</span>
+        </a>
+        <!-- Clothing and Wearables -->
+        <a href="{% url 'inventory:item_list' %}?category=CLOTHING_AND_WEARABLES{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'CLOTHING_AND_WEARABLES' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+          <span class="font-medium">Clothing & Wearables</span>
+        </a>
+        <!-- Bottles & Containers -->
+        <a href="{% url 'inventory:item_list' %}?category=BOTTLES_AND_CONTAINERS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'BOTTLES_AND_CONTAINERS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+          <span class="font-medium">Bottles & Containers</span>
+        </a>
+        <!-- Documents & IDs -->
+        <a href="{% url 'inventory:item_list' %}?category=DOCUMENTS_AND_IDS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'DOCUMENTS_AND_IDS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span class="font-medium">Documents & IDs</span>
+        </a>
+        <!-- Notebooks & Books -->
+        <a href="{% url 'inventory:item_list' %}?category=NOTEBOOKS_AND_BOOKS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'NOTEBOOKS_AND_BOOKS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+          <span class="font-medium">Notebooks & Books</span>
+        </a>
+        <!-- Other / Misc -->
+        <a href="{% url 'inventory:item_list' %}?category=OTHER_MISC{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'OTHER_MISC' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+          <span class="font-medium">Other / Misc</span>
+        </a>
+      </nav>
     </div>
-    <div class="col-md-3">
-        <label class="form-label">Location</label>
-        <input type="text" name="location" class="form-control" value="{{ request.GET.location }}" placeholder="Where it was found">
+  </aside>
+  
+  <!-- MAIN AREA -->
+  <main class="flex-1 overflow-y-auto p-8">
+    <!-- Top Header: Auth Toggle Area -->
+    <header class="mb-10 flex justify-end">
+      <div id="auth-button-container">
+        {% if user.is_authenticated and user.is_staff %}
+          <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-6 py-3 font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95">Logout</a>
+          <a href="{% url 'inventory:item_upload' %}" class="ml-4 inline-block rounded-xl bg-purple-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95">Upload Item</a>
+        {% else %}
+          <a href="{% url 'login' %}" class="inline-block rounded-xl bg-purple-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95">Staff Login</a>
+        {% endif %}
+      </div>
+    </header>
+    
+    <!-- Search Bar -->
+    <div class="mb-12">
+      <form method="get" action="{% url 'inventory:item_list' %}" class="group relative" id="search-form">
+        {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+        <input 
+          type="text" 
+          name="q"
+          id="search-input"
+          value="{{ search_query }}"
+          placeholder="Try: 'Blue backpack with a small keychain' or 'AirPods'..." 
+          class="w-full rounded-3xl border border-slate-200 bg-white p-6 pl-16 pr-16 text-xl shadow-lg transition-all focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10" 
+          autocomplete="off"
+        />
+        <button type="submit" class="absolute top-1/2 left-6 -translate-y-1/2 text-cyan-500 hover:text-cyan-600 transition-colors cursor-pointer">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </button>
+        {% if search_query %}
+        <a href="{% url 'inventory:item_list' %}{% if current_category %}?category={{ current_category }}{% endif %}" class="absolute top-1/2 right-6 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" title="Clear search">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </a>
+        {% endif %}
+      </form>
     </div>
-    <div class="col-md-2">
-        <label class="form-label">Date from</label>
-        <input type="date" name="date_from" class="form-control" value="{{ request.GET.date_from }}">
+    
+    <!-- Feed Header -->
+    <div class="mb-8 flex items-end justify-between px-2">
+      <div>
+        <h2 class="text-4xl font-black tracking-tight text-[#0F172A] uppercase">Inventory Feed</h2>
+        <p class="mt-1 font-bold text-slate-500">
+          {% if current_category %}
+            Viewing {{ current_category|lower|title }} items
+          {% else %}
+            Viewing all recently found items
+          {% endif %}
+        </p>
+      </div>
     </div>
-    <div class="col-md-2">
-        <label class="form-label">Date to</label>
-        <input type="date" name="date_to" class="form-control" value="{{ request.GET.date_to }}">
-    </div>
-    <div class="col-md-1 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">Filter</button>
-    </div>
-</form>
-
-{% if items %}
-    <div class="row row-cols-1 row-cols-md-2 g-4">
-        {% for item in items %}
-            <div class="col">
-                <div class="card h-100">
-                    {% with first_image=item.images.first %}
-                        {% if first_image %}
-                            <img src="{{ first_image.image.url }}" class="card-img-top" alt="{{ item.title }}">
-                        {% endif %}
-                    {% endwith %}
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <a href="{% url 'inventory:item_detail' item.pk %}">{{ item.title }}</a>
-                        </h5>
-                        <p class="card-text text-muted mb-1">
-                            Found at {{ item.location_found|default:"Unknown location" }}
-                            on {{ item.date_found }}
-                        </p>
-                        <p class="card-text">
-                            {{ item.description|truncatewords:25 }}
-                        </p>
-                    </div>
-                </div>
+    
+    <!-- Grid Layout -->
+    {% if items %}
+    <div class="grid grid-cols-1 gap-10 p-2 md:grid-cols-2 2xl:grid-cols-3">
+      {% for item in items %}
+        {% with first_image=item.images.first %}
+        <div class="group rounded-[2.5rem] border border-slate-100 bg-white p-4 shadow-lg transition-all duration-500 hover:shadow-2xl {% if item.status == 'CLAIMED' %}opacity-75{% endif %}">
+          <a href="{% url 'inventory:item_detail' item.pk %}" class="block">
+            <div class="relative mb-6 h-72 overflow-hidden rounded-[2rem] bg-slate-900 cursor-pointer">
+              {% if first_image %}
+                <div class="h-full w-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('{{ first_image.image.url }}');"></div>
+              {% else %}
+                <div class="h-full w-full bg-gradient-to-br from-slate-700 to-slate-900 transition-transform duration-700 group-hover:scale-105"></div>
+              {% endif %}
+              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+              <!-- Category Badge -->
+              <div class="absolute top-5 left-5">
+                <span class="rounded-xl {% if item.category == 'ELECTRONICS' %}bg-[#8B5CF6]{% elif item.category == 'BAGS_AND_CARRY' %}bg-blue-600{% elif item.category == 'CLOTHING_AND_WEARABLES' %}bg-pink-600{% elif item.category == 'BOTTLES_AND_CONTAINERS' %}bg-teal-600{% elif item.category == 'DOCUMENTS_AND_IDS' %}bg-yellow-600{% elif item.category == 'NOTEBOOKS_AND_BOOKS' %}bg-indigo-600{% else %}bg-slate-700{% endif %} px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-lg">
+                  {{ item.get_category_display|lower }}
+                </span>
+              </div>
+              <!-- Title (clickable) -->
+              <div class="absolute bottom-6 left-6">
+                <h3 class="text-2xl leading-tight font-bold tracking-tight text-white hover:text-cyan-300 transition-colors">{{ item.title }}</h3>
+              </div>
             </div>
-        {% endfor %}
+          </a>
+          <div class="px-2 pb-2 relative">
+            <!-- Claimed Badge (bottom right of card) -->
+            {% if item.status == 'CLAIMED' %}
+            <div class="absolute bottom-2 right-2">
+              <span class="rounded-full bg-green-600 px-3 py-1 text-[9px] font-black tracking-widest text-white uppercase shadow-lg">Claimed</span>
+            </div>
+            {% endif %}
+            <!-- Location & Time -->
+            <p class="mb-3 flex items-center gap-2 font-bold text-[#0F172A]">
+              <svg class="h-4 w-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+              {{ item.location_found|default:"Unknown location" }} • {{ item.date_found|timesince }} ago
+            </p>
+            <!-- Description -->
+            <div class="mb-5 min-h-[4rem] border-l-4 border-slate-200 pl-3 text-sm text-slate-500 italic">
+              {% if item.description %}
+                {{ item.description|truncatewords:20 }}
+              {% else %}
+                <span class="text-slate-400">No description available</span>
+              {% endif %}
+            </div>
+            <!-- Buttons -->
+            <div class="flex gap-3">
+              <a href="{% url 'inventory:item_detail' item.pk %}" class="flex-1 rounded-2xl bg-slate-700 py-5 text-center text-sm font-black tracking-widest text-white uppercase shadow-lg transition-all hover:bg-slate-800">View Details</a>
+              {% if item.status != 'CLAIMED' %}
+              <a href="{% url 'inventory:item_detail' item.pk %}" class="flex-1 rounded-2xl bg-[#06B6D4] py-5 text-center text-sm font-black tracking-widest text-white uppercase shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-600">Claim Item</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endwith %}
+      {% endfor %}
     </div>
 
+    <!-- Pagination -->
     {% if is_paginated %}
-        <nav class="mt-4" aria-label="Page navigation">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode|cut:'page='|cut:'page=' }}" aria-label="Previous">
-                            &laquo;
-                        </a>
-                    </li>
-                {% endif %}
-
-                <li class="page-item disabled">
-                    <span class="page-link">
-                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                    </span>
-                </li>
-
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode|cut:'page='|cut:'page=' }}" aria-label="Next">
-                            &raquo;
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
+    <div class="mt-12 flex justify-center gap-4">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="rounded-xl bg-white px-6 py-3 font-bold text-slate-700 shadow-lg transition hover:bg-slate-50">← Previous</a>
+      {% endif %}
+      <span class="flex items-center rounded-xl bg-cyan-500 px-6 py-3 font-bold text-white shadow-lg">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      </span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="rounded-xl bg-white px-6 py-3 font-bold text-slate-700 shadow-lg transition hover:bg-slate-50">Next →</a>
+      {% endif %}
+    </div>
     {% endif %}
-{% else %}
-    <p class="text-muted">No items found matching your criteria.</p>
-{% endif %}
-{% endblock %}
+    
+    {% else %}
+    <div class="rounded-[2.5rem] border border-slate-100 bg-white p-12 text-center shadow-lg">
+      <p class="text-xl font-bold text-slate-500">No items found matching your criteria.</p>
+      <a href="{% url 'inventory:item_list' %}" class="mt-4 inline-block rounded-xl bg-cyan-500 px-6 py-3 font-bold text-white shadow-lg transition hover:bg-cyan-600">View All Items</a>
+    </div>
+    {% endif %}
+  </main>
+</div>
 
-
-
+<script>
+// Ensure search form works properly
+document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('search-form');
+    const searchInput = document.getElementById('search-input');
+    
+    if (searchForm && searchInput) {
+        // Form already submits on button click, but ensure Enter key works
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchForm.submit();
+            }
+        });
+    }
+});
+</script>
+</body>
+</html>

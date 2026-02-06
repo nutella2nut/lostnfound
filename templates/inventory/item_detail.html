@@ -1,47 +1,291 @@
-{% extends "base.html" %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ item.title }} - Trace Lost & Found</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900">
+<!-- SIDEBAR: The 7 Sections -->
+<div class="flex min-h-screen flex-nowrap">
+  <aside class="m-4 flex hidden w-80 flex-col rounded-[2.5rem] bg-[#0F172A] shadow-2xl xl:flex">
+    <div class="p-10 pt-12">
+      <!-- LOGO -->
+      <div class="mb-10 flex items-center gap-4 px-2 select-none">
+        <!-- Icon -->
+        <div class="relative h-14 w-14">
+          <!-- Gradient Pin -->
+          <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500 shadow-xl"></div>
+          <!-- Magnifier Handle -->
+          <div class="absolute -bottom-1 -left-1 h-8 w-4 rotate-45 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
+          <!-- Robot Face -->
+          <div class="absolute inset-2 flex items-center justify-center rounded-full bg-[#0F172A]">
+            <svg viewBox="0 0 24 24" class="h-7 w-7 text-cyan-400" fill="currentColor">
+              <rect x="4" y="6" width="16" height="12" rx="4" />
+              <circle cx="9" cy="12" r="1.3" />
+              <circle cx="15" cy="12" r="1.3" />
+              <rect x="11" y="2" width="2" height="3" rx="1" />
+            </svg>
+          </div>
+        </div>
+        <!-- Text -->
+        <div class="leading-tight">
+          <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-3xl font-black tracking-tight text-transparent">Trace</h1>
+          <p class="text-xs font-bold tracking-widest text-slate-400 uppercase">Lost & Found • AI Powered</p>
+        </div>
+      </div>
 
-{% block content %}
-<h1 class="mb-3">{{ item.title }}</h1>
-
-<p class="text-muted">
-    Found at {{ item.location_found|default:"Unknown location" }}
-    on {{ item.date_found }}.
-</p>
-
-<div class="row g-4 mb-4">
-    <div class="col-md-6">
-        {% if item.images.all %}
-            <div id="itemImages" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-inner">
-                    {% for image in item.images.all %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ item.title }}">
-                        </div>
-                    {% endfor %}
-                </div>
-                {% if item.images.count > 1 %}
-                    <button class="carousel-control-prev" type="button" data-bs-target="#itemImages" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#itemImages" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
-                {% endif %}
-            </div>
+      <nav class="space-y-1">
+        <!-- All Items -->
+        <a href="{% url 'inventory:item_list' %}" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+          <span class="font-bold">All Items</span>
+        </a>
+        <!-- Electronics -->
+        <a href="{% url 'inventory:item_list' %}?category=ELECTRONICS" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+          <span class="font-medium">Electronics</span>
+        </a>
+        <!-- Bags & Carry -->
+        <a href="{% url 'inventory:item_list' %}?category=BAGS_AND_CARRY" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+          <span class="font-medium">Bags & Carry</span>
+        </a>
+        <!-- Clothing and Wearables -->
+        <a href="{% url 'inventory:item_list' %}?category=CLOTHING_AND_WEARABLES" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+          <span class="font-medium">Clothing & Wearables</span>
+        </a>
+        <!-- Bottles & Containers -->
+        <a href="{% url 'inventory:item_list' %}?category=BOTTLES_AND_CONTAINERS" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+          <span class="font-medium">Bottles & Containers</span>
+        </a>
+        <!-- Documents & IDs -->
+        <a href="{% url 'inventory:item_list' %}?category=DOCUMENTS_AND_IDS" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span class="font-medium">Documents & IDs</span>
+        </a>
+        <!-- Notebooks & Books -->
+        <a href="{% url 'inventory:item_list' %}?category=NOTEBOOKS_AND_BOOKS" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+          <span class="font-medium">Notebooks & Books</span>
+        </a>
+        <!-- Other / Misc -->
+        <a href="{% url 'inventory:item_list' %}?category=OTHER_MISC" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+          <span class="font-medium">Other / Misc</span>
+        </a>
+      </nav>
+    </div>
+  </aside>
+  
+  <!-- MAIN AREA -->
+  <main class="flex-1 overflow-y-auto p-8">
+    <!-- Top Header: Auth Toggle Area -->
+    <header class="mb-10 flex justify-end">
+      <div id="auth-button-container">
+        {% if user.is_authenticated and user.is_staff %}
+          <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-6 py-3 font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95">Logout</a>
+          <a href="{% url 'inventory:item_upload' %}" class="ml-4 inline-block rounded-xl bg-purple-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95">Upload Item</a>
         {% else %}
-            <p class="text-muted">No images available for this item.</p>
+          <a href="{% url 'login' %}" class="inline-block rounded-xl bg-purple-600 px-6 py-3 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95">Staff Login</a>
         {% endif %}
+      </div>
+    </header>
+    
+    <!-- Back Button -->
+    <div class="mb-8">
+      <a href="{% url 'inventory:item_list' %}" class="inline-flex items-center gap-2 text-slate-600 hover:text-cyan-600 transition-colors font-medium">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        Back to Browse Items
+      </a>
     </div>
-    <div class="col-md-6">
-        <h5>Description</h5>
-        <p>{{ item.description|linebreaks }}</p>
+    
+    <!-- Item Detail Card -->
+    <div class="rounded-[2.5rem] border border-slate-100 bg-white shadow-lg overflow-hidden {% if item.status == 'CLAIMED' %}opacity-75{% endif %}">
+      <!-- Image Gallery Section -->
+      <div class="relative">
+        {% if item.images.all %}
+          <div class="relative h-[500px] bg-slate-900 overflow-hidden">
+            {% with first_image=item.images.first %}
+              <div class="h-full w-full bg-cover bg-center" style="background-image: url('{{ first_image.image.url }}');"></div>
+            {% endwith %}
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            
+            <!-- Category Badge -->
+            <div class="absolute top-6 left-6">
+              <span class="rounded-xl {% if item.category == 'ELECTRONICS' %}bg-[#8B5CF6]{% elif item.category == 'BAGS_AND_CARRY' %}bg-blue-600{% elif item.category == 'CLOTHING_AND_WEARABLES' %}bg-pink-600{% elif item.category == 'BOTTLES_AND_CONTAINERS' %}bg-teal-600{% elif item.category == 'DOCUMENTS_AND_IDS' %}bg-yellow-600{% elif item.category == 'NOTEBOOKS_AND_BOOKS' %}bg-indigo-600{% else %}bg-slate-700{% endif %} px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-lg">
+                {{ item.get_category_display|lower }}
+              </span>
+            </div>
+            
+            <!-- Claimed Badge (if claimed) -->
+            {% if item.status == 'CLAIMED' %}
+            <div class="absolute top-6 right-6">
+              <span class="rounded-xl bg-green-600 px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-lg">✓ Claimed</span>
+            </div>
+            {% endif %}
+            
+            <!-- Title Overlay -->
+            <div class="absolute bottom-6 left-6 right-6">
+              <h1 class="text-4xl leading-tight font-bold tracking-tight text-white mb-2">{{ item.title }}</h1>
+            </div>
+          </div>
+          
+          <!-- Image Thumbnails (if multiple images) -->
+          {% if item.images.count > 1 %}
+          <div class="p-4 bg-slate-50 border-t border-slate-200">
+            <div class="flex gap-3 overflow-x-auto">
+              {% for image in item.images.all %}
+                <button onclick="changeMainImage('{{ image.image.url }}')" class="flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 border-transparent hover:border-cyan-500 transition-all">
+                  <img src="{{ image.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="w-full h-full object-cover">
+                </button>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        {% else %}
+          <div class="relative h-[500px] bg-gradient-to-br from-slate-700 to-slate-900">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <p class="text-slate-400 text-lg font-medium">No images available</p>
+            </div>
+            <!-- Category Badge -->
+            <div class="absolute top-6 left-6">
+              <span class="rounded-xl {% if item.category == 'ELECTRONICS' %}bg-[#8B5CF6]{% elif item.category == 'BAGS_AND_CARRY' %}bg-blue-600{% elif item.category == 'CLOTHING_AND_WEARABLES' %}bg-pink-600{% elif item.category == 'BOTTLES_AND_CONTAINERS' %}bg-teal-600{% elif item.category == 'DOCUMENTS_AND_IDS' %}bg-yellow-600{% elif item.category == 'NOTEBOOKS_AND_BOOKS' %}bg-indigo-600{% else %}bg-slate-700{% endif %} px-4 py-2 text-[10px] font-black tracking-widest text-white uppercase shadow-lg">
+                {{ item.get_category_display|lower }}
+              </span>
+            </div>
+            <!-- Title Overlay -->
+            <div class="absolute bottom-6 left-6 right-6">
+              <h1 class="text-4xl leading-tight font-bold tracking-tight text-white mb-2">{{ item.title }}</h1>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+      
+      <!-- Content Section -->
+      <div class="p-8">
+        <!-- Location & Date Info -->
+        <div class="mb-6 flex items-center gap-4 text-slate-600">
+          <div class="flex items-center gap-2">
+            <svg class="h-5 w-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+            <span class="font-bold">{{ item.location_found|default:"Unknown location" }}</span>
+          </div>
+          <span class="text-slate-400">•</span>
+          <div class="flex items-center gap-2">
+            <svg class="h-5 w-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <span class="font-bold">Found on {{ item.date_found|date:"F d, Y" }}</span>
+          </div>
+          <span class="text-slate-400">•</span>
+          <span class="text-slate-500">{{ item.date_found|timesince }} ago</span>
+        </div>
+        
+        <!-- Claimed Notice -->
+        {% if item.status == 'CLAIMED' %}
+        <div class="mb-6 rounded-2xl bg-yellow-50 border-2 border-yellow-200 p-6">
+          <div class="flex items-start gap-3">
+            <svg class="h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div>
+              <h3 class="font-bold text-yellow-900 mb-1">This item has been claimed</h3>
+              <p class="text-yellow-800 text-sm">
+                {% if item.claimed_by_name %}
+                  <strong>{{ item.claimed_by_name }}</strong> has claimed this item{% if item.claimed_at %} on {{ item.claimed_at|date:"F d, Y" }}{% endif %}.
+                {% else %}
+                  This item has been claimed.
+                {% endif %}
+                You still have time to claim it if this is your item - please contact reception.
+              </p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        
+        <!-- Description -->
+        <div class="mb-8">
+          <h2 class="text-2xl font-black text-[#0F172A] mb-4 uppercase tracking-tight">Description</h2>
+          <div class="prose prose-slate max-w-none">
+            {% if item.description %}
+              <p class="text-lg text-slate-700 leading-relaxed whitespace-pre-wrap">{{ item.description }}</p>
+            {% else %}
+              <p class="text-lg text-slate-400 italic">No description available for this item.</p>
+            {% endif %}
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="pt-6 border-t border-slate-200">
+          <div class="flex gap-4 items-start">
+            {% if item.status != 'CLAIMED' %}
+            <form method="post" action="{% url 'inventory:claim_item' item.pk %}" class="flex-1" id="claim-form">
+              {% csrf_token %}
+              <div class="mb-4">
+                <label for="id_name" class="block text-sm font-bold text-slate-700 mb-2">Your Name *</label>
+                <input 
+                  type="text" 
+                  name="name" 
+                  id="id_name" 
+                  required
+                  placeholder="Enter your full name"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base shadow-sm transition-all focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                />
+                <p class="mt-1 text-xs text-slate-500">Please enter your name so we can contact you when you arrive.</p>
+              </div>
+              <button type="submit" class="w-full rounded-2xl bg-[#06B6D4] py-5 text-center text-sm font-black tracking-widest text-white uppercase shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-600">
+                Claim Item
+              </button>
+            </form>
+            {% else %}
+            <div class="flex-1">
+              <div class="rounded-2xl bg-slate-300 py-5 text-center text-sm font-black tracking-widest text-slate-500 uppercase mb-4">
+                Already Claimed
+              </div>
+              <form method="post" action="{% url 'inventory:claim_item' item.pk %}" id="claim-form">
+                {% csrf_token %}
+                <div class="mb-4">
+                  <label for="id_name" class="block text-sm font-bold text-slate-700 mb-2">Your Name *</label>
+                  <input 
+                    type="text" 
+                    name="name" 
+                    id="id_name" 
+                    required
+                    placeholder="Enter your full name"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base shadow-sm transition-all focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  />
+                  <p class="mt-1 text-xs text-slate-500">If this is your item, you can still claim it. Please contact reception.</p>
+                </div>
+                <button type="submit" class="w-full rounded-2xl bg-[#06B6D4] py-5 text-center text-sm font-black tracking-widest text-white uppercase shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-600">
+                  Still Claim Item
+                </button>
+              </form>
+            </div>
+            {% endif %}
+            <div class="flex-1 flex flex-col">
+              <label class="block text-sm font-bold text-slate-700 mb-2 opacity-0 pointer-events-none">Placeholder</label>
+              <a href="{% url 'inventory:item_list' %}" class="rounded-2xl bg-slate-700 py-5 text-center text-sm font-black tracking-widest text-white uppercase shadow-lg transition-all hover:bg-slate-800">
+                Back to Browse
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </main>
 </div>
 
-<a href="{% url 'inventory:item_list' %}" class="btn btn-secondary">Back to search results</a>
-{% endblock %}
-
-
-
+<script>
+function changeMainImage(imageUrl) {
+    const mainImageDiv = document.querySelector('.relative.h-\\[500px\\] .bg-cover');
+    if (mainImageDiv) {
+        mainImageDiv.style.backgroundImage = `url('${imageUrl}')`;
+    }
+}
+</script>
+</body>
+</html>

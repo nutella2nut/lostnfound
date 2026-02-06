@@ -29,3 +29,17 @@ ItemImageFormSet = inlineformset_factory(
 )
 
 
+class ClaimItemForm(forms.Form):
+    """Form for claiming an item - captures claimant's name."""
+    name = forms.CharField(
+        max_length=255,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter your full name',
+            'required': True,
+        }),
+        help_text="Please enter your name so we can contact you when you arrive."
+    )
+
+

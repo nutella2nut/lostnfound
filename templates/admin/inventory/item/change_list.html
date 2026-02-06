@@ -1,0 +1,18 @@
+{% extends "admin/change_list.html" %}
+{% load admin_urls %}
+
+{% block content_title %}
+    {{ block.super }}
+    {% if recent_claims_count %}
+    <div style="background: #fef3c7; border: 2px solid #fbbf24; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <strong style="color: #92400e; font-size: 16px;">⚠️ NOTIFICATION:</strong>
+        <p style="color: #78350f; margin: 8px 0 0 0;">
+            There {{ recent_claims_count|pluralize:"is,are" }} <strong>{{ recent_claims_count }}</strong> 
+            recently claimed item{{ recent_claims_count|pluralize }} (within last 24 hours). 
+            Claimant{{ recent_claims_count|pluralize }} may come to the reception soon. 
+            Please review the "Claimed By" column below.
+        </p>
+    </div>
+    {% endif %}
+{% endblock %}
+
