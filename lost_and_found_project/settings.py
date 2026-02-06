@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 import dj_database_url
 
 
@@ -40,25 +41,51 @@ ALLOWED_HOSTS: list[str] = allowed_hosts_list
 # Default origins for local development
 csrf_trusted_origins_list = ["http://localhost:8000", "http://127.0.0.1:8000"]
 
-# Add Railway domain if in production (when DATABASE_URL is set, we're likely on Railway)
-if os.environ.get("DATABASE_URL"):
-    # Railway uses *.up.railway.app domains with HTTPS
-    csrf_trusted_origins_list.append("https://lostnfound-production.up.railway.app")
+# Check if we're on Railway (multiple indicators)
+is_railway = (
+    os.environ.get("DATABASE_URL") or 
+    os.environ.get("RAILWAY_ENVIRONMENT") or
+    os.environ.get("RAILWAY_PUBLIC_DOMAIN")
+)
+
+if is_railway:
+    # Always add the specific production domain
+    railway_prod_domain = "https://lostnfound-production.up.railway.app"
+    if railway_prod_domain not in csrf_trusted_origins_list:
+        csrf_trusted_origins_list.append(railway_prod_domain)
+    
     # Also allow any Railway domain via environment variable
     railway_domain = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
     if railway_domain:
-        # Ensure it starts with https://
+        # Remove any trailing slashes and ensure it starts with https://
+        railway_domain = railway_domain.strip().rstrip("/")
         railway_origin = railway_domain if railway_domain.startswith("http") else f"https://{railway_domain}"
+        # Remove trailing slash if present
+        railway_origin = railway_origin.rstrip("/")
         if railway_origin not in csrf_trusted_origins_list:
             csrf_trusted_origins_list.append(railway_origin)
+    
+    # Also check RAILWAY_STATIC_URL which might contain the domain
+    railway_static = os.environ.get("RAILWAY_STATIC_URL", "")
+    if railway_static:
+        # Extract domain from static URL if it's a full URL
+        if railway_static.startswith("http"):
+            parsed = urlparse(railway_static)
+            railway_origin = f"{parsed.scheme}://{parsed.netloc}".rstrip("/")
+            if railway_origin not in csrf_trusted_origins_list:
+                csrf_trusted_origins_list.append(railway_origin)
 
 # Allow additional origins via DJANGO_CSRF_TRUSTED_ORIGINS environment variable
 env_origins = os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "")
 if env_origins:
     for origin in env_origins.split(","):
-        origin = origin.strip()
-        if origin and origin not in csrf_trusted_origins_list:
-            csrf_trusted_origins_list.append(origin)
+        origin = origin.strip().rstrip("/")
+        if origin:
+            # Ensure it has a protocol
+            if not origin.startswith("http"):
+                origin = f"https://{origin}"
+            if origin not in csrf_trusted_origins_list:
+                csrf_trusted_origins_list.append(origin)
 
 CSRF_TRUSTED_ORIGINS: list[str] = csrf_trusted_origins_list
 
