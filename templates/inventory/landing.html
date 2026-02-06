@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>TRACE - Lost & Found</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <!-- Hero Section -->
+    <div class="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <!-- Background Image with Overlay -->
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/70 z-10"></div>
+            <!-- Background pattern representing school supplies -->
+            <div class="absolute inset-0 bg-[#1e293b] opacity-90"></div>
+            <div class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="relative z-20 text-center px-4 py-20 w-full max-w-6xl mx-auto">
+            <!-- Logo/Title -->
+            <h1 class="text-7xl md:text-8xl font-black text-white mb-6 tracking-tight">TRACE</h1>
+            
+            <!-- Description -->
+            <p class="text-xl md:text-2xl text-white mb-12 max-w-3xl mx-auto leading-relaxed">
+                A centralized lost & found platform that helps students quickly locate and claim misplaced items — without the chaos.
+            </p>
+
+            <!-- Navigation Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+                <a href="{% url 'inventory:item_list' %}" class="group flex items-center gap-3 bg-slate-700 hover:bg-slate-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Browse
+                </a>
+                <a href="{% url 'login' %}" class="group flex items-center gap-3 bg-cyan-500 hover:bg-cyan-400 border-2 border-cyan-400 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    Staff Login
+                </a>
+            </div>
+
+            <!-- Footer Text -->
+            <p class="text-cyan-400 text-lg md:text-xl font-bold tracking-wide">
+                FROM LOST TO LOCATED - EFFORTLESSLY
+            </p>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <section class="py-20 px-4 bg-slate-50">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl md:text-6xl font-black text-slate-900 mb-4">How It Works</h2>
+                <p class="text-xl text-slate-600">Lost something at school? We've got it.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="bg-white rounded-2xl p-8 shadow-lg relative">
+                    <div class="absolute top-6 right-6 w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
+                        <span class="text-cyan-600 font-black text-xl">1</span>
+                    </div>
+                    <div class="mb-6">
+                        <svg class="w-16 h-16 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-3">Find Your Item</h3>
+                    <p class="text-slate-600 leading-relaxed">Browse uploaded lost items with images and descriptions.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-white rounded-2xl p-8 shadow-lg relative">
+                    <div class="absolute top-6 right-6 w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
+                        <span class="text-cyan-600 font-black text-xl">2</span>
+                    </div>
+                    <div class="mb-6">
+                        <svg class="w-16 h-16 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-3">Claim Online</h3>
+                    <p class="text-slate-600 leading-relaxed">Submit a claim request if the item looks like yours.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-white rounded-2xl p-8 shadow-lg relative">
+                    <div class="absolute top-6 right-6 w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center">
+                        <span class="text-cyan-600 font-black text-xl">3</span>
+                    </div>
+                    <div class="mb-6">
+                        <svg class="w-16 h-16 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-900 mb-3">Collect Your Item</h3>
+                    <p class="text-slate-600 leading-relaxed">Verify ownership and collect your item securely.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Built For Real School Problems Section -->
+    <section class="py-20 px-4 bg-slate-900">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl md:text-6xl font-black text-cyan-400 mb-4">Built For Real School Problems</h2>
+                <p class="text-xl text-cyan-300">Saving time, reducing clutter, and improving accountability.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Feature 1 -->
+                <div class="text-center">
+                    <div class="mb-6 flex justify-center">
+                        <svg class="w-20 h-20 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-black text-cyan-400 mb-2">Saves Time</h3>
+                    <p class="text-cyan-300">For students and staff</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="text-center">
+                    <div class="mb-6 flex justify-center">
+                        <svg class="w-20 h-20 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-black text-cyan-400 mb-2">No More Clutter</h3>
+                    <p class="text-cyan-300">Lost & Found boxes are a thing of the past</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="text-center">
+                    <div class="mb-6 flex justify-center">
+                        <svg class="w-20 h-20 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-black text-cyan-400 mb-2">Image-based browsing</h3>
+                    <p class="text-cyan-300">Faster identification of items</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="text-center">
+                    <div class="mb-6 flex justify-center">
+                        <svg class="w-20 h-20 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-black text-cyan-400 mb-2">Secure & Verified</h3>
+                    <p class="text-cyan-300">Staff-verified claims only</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-cyan-400 py-8 text-center">
+        <p class="text-lg font-bold">FROM LOST TO LOCATED - EFFORTLESSLY</p>
+    </footer>
+</body>
+</html>
+

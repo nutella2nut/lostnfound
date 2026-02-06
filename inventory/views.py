@@ -9,7 +9,7 @@ from django.utils.dateparse import parse_date
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 
 from .forms import ClaimItemForm, ItemForm, ItemImageFormSet
 from .models import Item
@@ -20,6 +20,10 @@ class StaffRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
         return user.is_authenticated and user.is_staff
+
+
+class LandingPageView(TemplateView):
+    template_name = "inventory/landing.html"
 
 
 class ItemUploadView(LoginRequiredMixin, StaffRequiredMixin, View):

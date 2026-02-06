@@ -5,8 +5,10 @@ from . import views
 app_name = "inventory"
 
 urlpatterns = [
+    # Landing page
+    path("", views.LandingPageView.as_view(), name="landing"),
     # Public listing & detail views
-    path("", views.ItemListView.as_view(), name="item_list"),
+    path("browse/", views.ItemListView.as_view(), name="item_list"),
     path("items/<int:pk>/", views.ItemDetailView.as_view(), name="item_detail"),
     path("items/<int:pk>/claim/", views.ClaimItemView.as_view(), name="claim_item"),
     # Staff-only upload flow
