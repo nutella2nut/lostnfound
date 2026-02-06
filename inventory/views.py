@@ -171,7 +171,7 @@ class ItemListView(ListView):
         # Combine FOUND items and CLAIMED items within duration
         queryset = Item.objects.filter(
             Q(status=Item.Status.FOUND) | claimed_q_objects
-        ).prefetch_related('images')
+        ).prefetch_related('images', 'claims')
 
         # Category filter
         category = self.request.GET.get("category")
@@ -211,33 +211,54 @@ class ItemDetailView(DetailView):
     model = Item
     template_name = "inventory/item_detail.html"
     context_object_name = "item"
+    
+    def get_queryset(self):
+        return Item.objects.prefetch_related('images', 'claims')
 
 
 class ClaimItemView(View):
-    """Handle item claiming - marks item as CLAIMED and captures claimant name."""
+    """Handle item claiming - allows multiple people to claim the same item."""
     http_method_names = ["post"]
     
     def post(self, request, pk):
+        from .models import Claim
+        
         item = get_object_or_404(Item, pk=pk)
         form = ClaimItemForm(request.POST)
         
-        if form.is_valid() and item.status == Item.Status.FOUND:
+        if form.is_valid():
             name = form.cleaned_data['name']
-            item.status = Item.Status.CLAIMED
-            item.claimed_by_name = name
-            item.claimed_at = timezone.now()
-            item.save()
+            
+            # Create a new claim (allows multiple claims per item)
+            claim = Claim.objects.create(
+                item=item,
+                claimant_name=name,
+            )
+            
+            # Update item status to CLAIMED if it's the first claim
+            if item.status == Item.Status.FOUND:
+                item.status = Item.Status.CLAIMED
+                # Keep backward compatibility with old fields
+                item.claimed_by_name = name
+                item.claimed_at = timezone.now()
+                item.save()
             
             # Success message for the user claiming the item
-            messages.success(
-                request,
-                'Item successfully claimed! Pick it up from the reception.',
-            )
+            if item.claim_count > 1:
+                messages.success(
+                    request,
+                    f'Item successfully claimed! Note: {item.claim_count} people have claimed this item. Pick it up from the reception.',
+                )
+            else:
+                messages.success(
+                    request,
+                    'Item successfully claimed! Pick it up from the reception.',
+                )
             
             # Also log for admin visibility
             import logging
             logger = logging.getLogger(__name__)
-            logger.info(f"Item '{item.title}' (ID: {item.pk}) claimed by {name} at {item.claimed_at}")
+            logger.info(f"Item '{item.title}' (ID: {item.pk}) claimed by {name} at {claim.claimed_at}")
             
         elif not form.is_valid():
             # If form is invalid, show errors
@@ -256,47 +277,64 @@ class AdminDashboardView(LoginRequiredMixin, StaffRequiredMixin, View):
     def get(self, request):
         from django.core.paginator import Paginator
         
-        # Get all items
-        items = Item.objects.all().prefetch_related('images').order_by('-date_found', '-created_at')
+        # Get all items with claims prefetched
+        items = Item.objects.all().prefetch_related('images', 'claims').order_by('-date_found', '-created_at')
         
         # Paginate
         paginator = Paginator(items, self.paginate_by)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
         
-        # Get all claimed items for notification messages
-        claimed_items = Item.objects.filter(
-            status=Item.Status.CLAIMED,
-            claimed_at__isnull=False
-        ).order_by('-claimed_at')
+        # Get all claims for notification messages
+        from .models import Claim
+        
+        # Get all recent claims (from the last 7 days to avoid too many old messages)
+        from datetime import timedelta
+        recent_cutoff = timezone.now() - timedelta(days=7)
+        recent_claims = Claim.objects.filter(
+            claimed_at__gte=recent_cutoff
+        ).select_related('item').order_by('-claimed_at')
         
         # Create claim messages (stored in session to persist until dismissed)
-        claim_messages = request.session.get('claim_messages', [])
+        dismissed_message_ids = set(request.session.get('dismissed_message_ids', []))
+        claim_messages = []
         
-        # Add new claims that aren't in the session yet
-        for item in claimed_items:
-            if item.claimed_by_name and item.claimed_at:
-                message_id = f"claim_{item.pk}_{item.claimed_at.timestamp()}"
-                if not any(msg['id'] == message_id for msg in claim_messages):
-                    claim_messages.append({
-                        'id': message_id,
-                        'item_title': item.title,
-                        'claimant_name': item.claimed_by_name,
-                        'claimed_at': item.claimed_at.isoformat(),  # Convert datetime to string for JSON serialization
-                    })
+        # Add new claims that haven't been dismissed
+        for claim in recent_claims:
+            message_id = f"claim_{claim.pk}_{claim.claimed_at.timestamp()}"
+            if message_id not in dismissed_message_ids:
+                claim_messages.append({
+                    'id': message_id,
+                    'item_title': claim.item.title,
+                    'claimant_name': claim.claimant_name,
+                    'claimed_at': claim.claimed_at.isoformat(),
+                    'item_id': claim.item.pk,
+                })
         
-        # Store updated messages in session
-        request.session['claim_messages'] = claim_messages
+        # Store dismissed message IDs in session (don't store all messages, just IDs)
+        request.session['dismissed_message_ids'] = list(dismissed_message_ids)
         
         # Count claims per item for row coloring
-        # For now, we only have one claim per item, but structure allows for multiple
         items_with_multiple_claims = set()
         for item in page_obj:
-            # Currently only one claim per item, but this can be extended
-            # For now, no items will have multiple claims, but this structure allows for it
-            claim_count = 1 if item.status == Item.Status.CLAIMED and item.claimed_by_name else 0
-            if claim_count > 1:
+            # Use the claim_count property from the model
+            if item.claim_count > 1:
                 items_with_multiple_claims.add(item.pk)
+        
+        # Prepare claimants data for JavaScript (for the overlay)
+        import json
+        from django.core.serializers.json import DjangoJSONEncoder
+        
+        claimants_data = {}
+        for item in page_obj:
+            if item.claims.exists():
+                claimants_data[item.pk] = [
+                    {
+                        'name': claim.claimant_name,
+                        'claimed_at': claim.claimed_at.isoformat(),
+                    }
+                    for claim in item.claims.all()
+                ]
         
         context = {
             'items': page_obj,
@@ -304,6 +342,7 @@ class AdminDashboardView(LoginRequiredMixin, StaffRequiredMixin, View):
             'is_paginated': page_obj.has_other_pages(),
             'claim_messages': claim_messages,
             'items_with_multiple_claims': items_with_multiple_claims,
+            'claimants_data': json.dumps(claimants_data, cls=DjangoJSONEncoder),
         }
         
         return render(request, self.template_name, context)
@@ -315,9 +354,9 @@ class AdminDashboardView(LoginRequiredMixin, StaffRequiredMixin, View):
             data = json.loads(request.body)
             if data.get('action') == 'dismiss_message':
                 message_id = data.get('message_id')
-                claim_messages = request.session.get('claim_messages', [])
-                claim_messages = [msg for msg in claim_messages if msg['id'] != message_id]
-                request.session['claim_messages'] = claim_messages
+                dismissed_ids = set(request.session.get('dismissed_message_ids', []))
+                dismissed_ids.add(message_id)
+                request.session['dismissed_message_ids'] = list(dismissed_ids)
                 return JsonResponse({'success': True})
             elif data.get('action') == 'delete_item':
                 item_id = data.get('item_id')

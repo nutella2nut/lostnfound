@@ -65,6 +65,12 @@
             width: 400px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
+        .claimant-item {
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            border-left: 3px solid #06b6d4;
+        }
     </style>
 </head>
 <body class="bg-[#F8FAFC] text-slate-900">
@@ -212,8 +218,20 @@
                 </span>
               </td>
               <td class="px-4 py-3 text-xs sm:text-sm text-slate-700">
-                {% if item.claimed_by_name %}
-                  {{ item.claimed_by_name }}
+                {% if item.claims.exists %}
+                  {% with first_claim=item.claims.first %}
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span>{{ first_claim.claimant_name }}</span>
+                      {% if item.claim_count > 1 %}
+                        <button 
+                          onclick="showAllClaimants({{ item.pk }}, '{{ item.title|escapejs }}')" 
+                          class="text-xs text-cyan-600 hover:text-cyan-800 hover:underline font-medium"
+                        >
+                          View All ({{ item.claim_count }})
+                        </button>
+                      {% endif %}
+                    </div>
+                  {% endwith %}
                 {% else %}
                   <span class="text-slate-400">-</span>
                 {% endif %}
@@ -279,6 +297,25 @@
   </div>
 </div>
 
+<!-- View All Claimants Modal -->
+<div id="claimantsModal" class="delete-modal" onclick="if(event.target === this) closeClaimantsModal()">
+  <div class="delete-modal-content" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-black text-slate-900">All Claimants</h3>
+      <button onclick="closeClaimantsModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold leading-none">×</button>
+    </div>
+    <p class="text-sm text-slate-600 mb-4" id="claimantsItemTitle"></p>
+    <div id="claimantsList" class="space-y-2 max-h-64 overflow-y-auto">
+      <!-- Claimants will be populated here -->
+    </div>
+    <div class="mt-4 flex justify-end">
+      <button onclick="closeClaimantsModal()" class="rounded-xl bg-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-400 transition">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 // Mobile menu functionality
 function openMobileMenu() {
@@ -331,6 +368,53 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+// Claimants data from server
+const claimantsData = {{ claimants_data|safe|default:"{}" }};
+
+// View all claimants functionality
+function showAllClaimants(itemId, itemTitle) {
+    const modal = document.getElementById('claimantsModal');
+    const titleEl = document.getElementById('claimantsItemTitle');
+    const listEl = document.getElementById('claimantsList');
+    
+    titleEl.textContent = `Item: ${itemTitle}`;
+    
+    // Get claimants for this item
+    const claimants = claimantsData[itemId] || [];
+    
+    if (claimants.length === 0) {
+        listEl.innerHTML = '<p class="text-slate-500 text-sm">No claimants found.</p>';
+    } else {
+        listEl.innerHTML = claimants.map((claimant, index) => {
+            const date = new Date(claimant.claimed_at);
+            const dateStr = date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+            return `
+                <div class="claimant-item">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-900">${index + 1}. ${claimant.name}</span>
+                        <span class="text-xs text-slate-500">${dateStr}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeClaimantsModal() {
+    const modal = document.getElementById('claimantsModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 // Delete confirmation and execution
@@ -434,6 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape') {
             closeImageModal();
             closeDeleteModal();
+            closeClaimantsModal();
         }
     });
 });

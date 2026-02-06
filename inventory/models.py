@@ -54,6 +54,36 @@ class Item(models.Model):
 
     def __str__(self) -> str:
         return self.title
+    
+    @property
+    def claim_count(self):
+        """Return the number of claims for this item."""
+        return self.claims.count()
+    
+    @property
+    def latest_claim(self):
+        """Return the most recent claim."""
+        return self.claims.order_by('-claimed_at').first()
+
+
+class Claim(models.Model):
+    """Track individual claims for items - allows multiple people to claim the same item."""
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        related_name="claims",
+    )
+    claimant_name = models.CharField(max_length=255, help_text="Name of person claiming this item")
+    claimed_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-claimed_at']
+        indexes = [
+            models.Index(fields=['item', '-claimed_at']),
+        ]
+    
+    def __str__(self) -> str:
+        return f"{self.claimant_name} claimed {self.item.title}"
 
 
 class ItemImage(models.Model):

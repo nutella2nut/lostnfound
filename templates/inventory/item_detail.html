@@ -289,10 +289,28 @@
           </div>
         </div>
         
+        <!-- Show all claimants if item has been claimed -->
+        {% if item.claims.exists %}
+        <div class="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-blue-50 border-2 border-blue-200 p-4 sm:p-6">
+          <h3 class="font-bold text-blue-900 mb-2 text-sm sm:text-base">Claimed By:</h3>
+          <ul class="space-y-1">
+            {% for claim in item.claims.all %}
+            <li class="text-blue-800 text-sm sm:text-base">
+              <strong>{{ claim.claimant_name }}</strong> - {{ claim.claimed_at|date:"M d, Y g:i A" }}
+            </li>
+            {% endfor %}
+          </ul>
+          {% if item.claim_count > 1 %}
+          <p class="mt-2 text-xs sm:text-sm text-blue-700 font-medium">
+            ⚠️ Multiple people have claimed this item. Please verify ownership at reception.
+          </p>
+          {% endif %}
+        </div>
+        {% endif %}
+        
         <!-- Action Buttons -->
         <div class="pt-4 sm:pt-6 border-t border-slate-200">
           <div class="flex flex-col lg:flex-row gap-4 items-stretch lg:items-start">
-            {% if item.status != 'CLAIMED' %}
             <form method="post" action="{% url 'inventory:claim_item' item.pk %}" class="flex-1" id="claim-form">
               {% csrf_token %}
               <div class="mb-3 sm:mb-4">
@@ -305,37 +323,18 @@
                   placeholder="Enter your full name"
                   class="w-full rounded-xl border border-slate-300 bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-sm transition-all focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                 />
-                <p class="mt-1 text-xs text-slate-500">Please enter your name so we can contact you when you arrive.</p>
+                <p class="mt-1 text-xs text-slate-500">
+                  {% if item.claims.exists %}
+                    You can still claim this item if it's yours. Please contact reception.
+                  {% else %}
+                    Please enter your name so we can contact you when you arrive.
+                  {% endif %}
+                </p>
               </div>
               <button type="submit" class="w-full rounded-xl sm:rounded-2xl bg-[#06B6D4] py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-white uppercase shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-600 touch-manipulation">
-                Claim Item
+                {% if item.claims.exists %}Still Claim Item{% else %}Claim Item{% endif %}
               </button>
             </form>
-            {% else %}
-            <div class="flex-1">
-              <div class="rounded-xl sm:rounded-2xl bg-slate-300 py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-slate-500 uppercase mb-3 sm:mb-4">
-                Already Claimed
-              </div>
-              <form method="post" action="{% url 'inventory:claim_item' item.pk %}" id="claim-form">
-                {% csrf_token %}
-                <div class="mb-3 sm:mb-4">
-                  <label for="id_name" class="block text-sm font-bold text-slate-700 mb-2">Your Name *</label>
-                  <input 
-                    type="text" 
-                    name="name" 
-                    id="id_name" 
-                    required
-                    placeholder="Enter your full name"
-                    class="w-full rounded-xl border border-slate-300 bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-sm transition-all focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
-                  />
-                  <p class="mt-1 text-xs text-slate-500">If this is your item, you can still claim it. Please contact reception.</p>
-                </div>
-                <button type="submit" class="w-full rounded-xl sm:rounded-2xl bg-[#06B6D4] py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-white uppercase shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-600 touch-manipulation">
-                  Still Claim Item
-                </button>
-              </form>
-            </div>
-            {% endif %}
             <div class="flex-1 flex flex-col">
               <label class="block text-sm font-bold text-slate-700 mb-2 opacity-0 pointer-events-none hidden lg:block">Placeholder</label>
               <a href="{% url 'inventory:item_list' %}" class="rounded-xl sm:rounded-2xl bg-slate-700 py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-white uppercase shadow-lg transition-all hover:bg-slate-800 touch-manipulation">
