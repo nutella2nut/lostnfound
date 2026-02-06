@@ -48,7 +48,9 @@ def analyze_item_images(files: Iterable) -> Mapping[str, str]:
         "You are helping catalog lost-and-found items for a reception desk. "
         "Given an image of an item, respond with JSON only, with this exact shape:\n"
         '{ "title": "short, specific title", '
-        '"description": "detailed description with brand, color, size, model, visible markings" }.\n'
+        '"description": "detailed description with brand, color, size, model, visible markings", '
+        '"category": "one of: Electronics, Bags and Carry, Clothing and wearables, '
+        'bottles and containers, Documents and Id\\\"s, Notebooks/books, Other/Misc" }.\n'
         "Do not include any explanation or text outside the JSON. Return only valid JSON."
     )
 
@@ -108,13 +110,33 @@ def analyze_item_images(files: Iterable) -> Mapping[str, str]:
 
     title = (parsed.get("title") or "").strip()
     description = (parsed.get("description") or "").strip()
+    category_raw = (parsed.get("category") or "").strip()
+
+    def normalize_category(value: str) -> str:
+        v = value.lower()
+        if "electronic" in v or "laptop" in v or "phone" in v or "tablet" in v or "charger" in v:
+            return "ELECTRONICS"
+        if "bag" in v or "backpack" in v or "carry" in v or "luggage" in v:
+            return "BAGS_AND_CARRY"
+        if "cloth" in v or "shirt" in v or "pants" in v or "jacket" in v or "shoe" in v or "wearable" in v:
+            return "CLOTHING_AND_WEARABLES"
+        if "bottle" in v or "flask" in v or "container" in v or "tupperware" in v:
+            return "BOTTLES_AND_CONTAINERS"
+        if "document" in v or "id" in v or "passport" in v or "license" in v or "card" in v:
+            return "DOCUMENTS_AND_IDS"
+        if "notebook" in v or "book" in v or "diary" in v:
+            return "NOTEBOOKS_AND_BOOKS"
+        return "OTHER_MISC"
+
+    category = normalize_category(category_raw)
 
     if not title and not description:
-        logger.warning("Gemini Vision API returned empty title/description: %s", parsed)
+        logger.warning("Gemini Vision API returned empty title/description/category: %s", parsed)
 
     return {
         "title": title,
         "description": description,
+        "category": category,
     }
 
 

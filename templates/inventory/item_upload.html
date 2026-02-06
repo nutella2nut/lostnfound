@@ -110,6 +110,18 @@
         <small class="text-muted d-block mt-1">Format: DD/MM/YYYY (use calendar icon to pick date)</small>
     </div>
     <div class="mb-3">
+        <label for="{{ item_form.category.id_for_label }}">Category</label>
+        {{ item_form.category }}
+        {% if item_form.category.errors %}
+            <div class="text-danger small">{{ item_form.category.errors }}</div>
+        {% endif %}
+        <small class="text-muted d-block">
+            AI will try to pick one of: Electronics, Bags and Carry, Clothing and wearables,
+            bottles and containers, Documents and Id's, Notebooks/books, Other/Misc.
+        </small>
+        <small id="ai-status-category" class="form-text text-muted"></small>
+    </div>
+    <div class="mb-3">
         <label for="{{ item_form.status.id_for_label }}">Status</label>
         {{ item_form.status }}
         {% if item_form.status.errors %}
@@ -387,8 +399,10 @@
         // Show loading indicator
         const titleField = document.querySelector('#id_title');
         const descField = document.querySelector('#id_description');
+        const categoryField = document.querySelector('#id_category');
         const titleStatus = document.getElementById('ai-status-title');
         const descStatus = document.getElementById('ai-status-desc');
+        const categoryStatus = document.getElementById('ai-status-category');
         const currentTitle = titleField.value;
         const currentDesc = descField.value;
         
@@ -408,8 +422,10 @@
         
         titleField.disabled = true;
         descField.disabled = true;
+        if (categoryField) categoryField.disabled = true;
         titleStatus.textContent = 'Analyzing image...';
         descStatus.textContent = 'Analyzing image...';
+        if (categoryStatus) categoryStatus.textContent = 'Analyzing image...';
         
         fetch('{% url "inventory:analyze_images_ajax" %}', {
             method: 'POST',
@@ -457,11 +473,33 @@
                 descStatus.textContent = '';
             }
             
-            if (!data.title && !data.description) {
+            // Update category if provided
+            if (data.category && categoryField) {
+                const value = data.category;
+                const optionValues = Array.from(categoryField.options).map(o => o.value);
+                if (optionValues.includes(value)) {
+                    categoryField.value = value;
+                    if (categoryStatus) {
+                        categoryStatus.textContent = '✓ AI-selected category';
+                        categoryStatus.className = 'text-success d-block';
+                    }
+                } else if (categoryStatus) {
+                    categoryStatus.textContent = 'AI suggested category, but it did not match available options';
+                    categoryStatus.className = 'text-warning d-block';
+                }
+            } else if (categoryStatus) {
+                categoryStatus.textContent = '';
+            }
+
+            if (!data.title && !data.description && !data.category) {
                 titleStatus.textContent = 'No AI suggestions available';
                 titleStatus.className = 'text-warning d-block';
                 descStatus.textContent = 'No AI suggestions available';
                 descStatus.className = 'text-warning d-block';
+                if (categoryStatus) {
+                    categoryStatus.textContent = 'No AI suggestions available';
+                    categoryStatus.className = 'text-warning d-block';
+                }
             }
         })
         .catch(error => {
@@ -470,10 +508,15 @@
             titleStatus.className = 'text-danger d-block';
             descStatus.textContent = 'Error: Could not analyze image. Check console for details.';
             descStatus.className = 'text-danger d-block';
+            if (categoryStatus) {
+                categoryStatus.textContent = 'Error: Could not analyze category.';
+                categoryStatus.className = 'text-danger d-block';
+            }
         })
         .finally(() => {
             titleField.disabled = false;
             descField.disabled = false;
+            if (categoryField) categoryField.disabled = false;
         });
     }
     
