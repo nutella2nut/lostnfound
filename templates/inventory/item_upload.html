@@ -176,6 +176,7 @@
         {% if user.is_authenticated and user.is_staff %}
           <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95 text-center">Logout</a>
           <a href="{% url 'inventory:item_list' %}" class="inline-block rounded-xl bg-slate-700 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-slate-800 active:scale-95 text-center">Browse Items</a>
+          <a href="{% url 'inventory:admin_dashboard' %}" class="inline-block rounded-xl bg-cyan-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-700 active:scale-95 text-center">Admin Dashboard</a>
         {% else %}
           <a href="{% url 'login' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Staff Login</a>
         {% endif %}
