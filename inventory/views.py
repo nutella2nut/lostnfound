@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
@@ -138,8 +140,38 @@ class ItemListView(ListView):
     context_object_name = "items"
     paginate_by = 20
 
+    def get_claim_duration_days(self, category):
+        """Return the number of days a claimed item should remain visible based on category."""
+        duration_map = {
+            Item.Category.ELECTRONICS: 7,
+            Item.Category.SPORTS_AND_CLOTHING: 3,
+            Item.Category.BAGS_AND_CARRY: 1,
+            Item.Category.BOTTLES_AND_CONTAINERS: 1,
+            Item.Category.OTHER_MISC: 1,
+            Item.Category.DOCUMENTS_AND_IDS: 1,  # Default for documents
+            Item.Category.NOTEBOOKS_AND_BOOKS: 1,  # Default for notebooks
+        }
+        return duration_map.get(category, 1)
+
     def get_queryset(self):
-        queryset = Item.objects.filter(status=Item.Status.FOUND).prefetch_related('images')
+        now = timezone.now()
+        
+        # Build Q objects for claimed items that are still within their category-specific duration
+        claimed_q_objects = Q()
+        for category, _ in Item.Category.choices:
+            duration_days = self.get_claim_duration_days(category)
+            cutoff_date = now - timedelta(days=duration_days)
+            claimed_q_objects |= Q(
+                status=Item.Status.CLAIMED,
+                category=category,
+                claimed_at__isnull=False,
+                claimed_at__gte=cutoff_date
+            )
+        
+        # Combine FOUND items and CLAIMED items within duration
+        queryset = Item.objects.filter(
+            Q(status=Item.Status.FOUND) | claimed_q_objects
+        ).prefetch_related('images')
 
         # Category filter
         category = self.request.GET.get("category")
@@ -165,7 +197,7 @@ class ItemListView(ListView):
         if date_to:
             queryset = queryset.filter(date_found__lte=date_to)
 
-        return queryset
+        return queryset.order_by('-date_found', '-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -196,10 +228,10 @@ class ClaimItemView(View):
             item.claimed_at = timezone.now()
             item.save()
             
-            # Create admin notification message
+            # Success message for the user claiming the item
             messages.success(
                 request,
-                f'Item "{item.title}" has been claimed by {name}! They may come to the reception soon.',
+                'Item successfully claimed! Pick it up from the reception.',
             )
             
             # Also log for admin visibility
@@ -214,4 +246,81 @@ class ClaimItemView(View):
                     messages.error(request, f"{field}: {error}")
         
         return redirect("inventory:item_detail", pk=pk)
+
+
+class AdminDashboardView(LoginRequiredMixin, StaffRequiredMixin, View):
+    """Admin dashboard showing all items in a table with claim information."""
+    template_name = "inventory/admin_dashboard.html"
+    paginate_by = 50
+
+    def get(self, request):
+        from django.core.paginator import Paginator
+        
+        # Get all items
+        items = Item.objects.all().prefetch_related('images').order_by('-date_found', '-created_at')
+        
+        # Paginate
+        paginator = Paginator(items, self.paginate_by)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        # Get all claimed items for notification messages
+        claimed_items = Item.objects.filter(
+            status=Item.Status.CLAIMED,
+            claimed_at__isnull=False
+        ).order_by('-claimed_at')
+        
+        # Create claim messages (stored in session to persist until dismissed)
+        claim_messages = request.session.get('claim_messages', [])
+        
+        # Add new claims that aren't in the session yet
+        for item in claimed_items:
+            if item.claimed_by_name and item.claimed_at:
+                message_id = f"claim_{item.pk}_{item.claimed_at.timestamp()}"
+                if not any(msg['id'] == message_id for msg in claim_messages):
+                    claim_messages.append({
+                        'id': message_id,
+                        'item_title': item.title,
+                        'claimant_name': item.claimed_by_name,
+                        'claimed_at': item.claimed_at,
+                    })
+        
+        # Store updated messages in session
+        request.session['claim_messages'] = claim_messages
+        
+        # Count claims per item for row coloring
+        # For now, we only have one claim per item, but structure allows for multiple
+        items_with_multiple_claims = set()
+        for item in page_obj:
+            # Currently only one claim per item, but this can be extended
+            # For now, no items will have multiple claims, but this structure allows for it
+            claim_count = 1 if item.status == Item.Status.CLAIMED and item.claimed_by_name else 0
+            if claim_count > 1:
+                items_with_multiple_claims.add(item.pk)
+        
+        context = {
+            'items': page_obj,
+            'page_obj': page_obj,
+            'is_paginated': page_obj.has_other_pages(),
+            'claim_messages': claim_messages,
+            'items_with_multiple_claims': items_with_multiple_claims,
+        }
+        
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        """Handle message dismissal."""
+        import json
+        try:
+            data = json.loads(request.body)
+            if data.get('action') == 'dismiss_message':
+                message_id = data.get('message_id')
+                claim_messages = request.session.get('claim_messages', [])
+                claim_messages = [msg for msg in claim_messages if msg['id'] != message_id]
+                request.session['claim_messages'] = claim_messages
+                return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+        
+        return JsonResponse({'success': False}, status=400)
 

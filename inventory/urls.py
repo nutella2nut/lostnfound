@@ -14,6 +14,7 @@ urlpatterns = [
     # Staff-only upload flow
     path("staff/items/upload/", views.ItemUploadView.as_view(), name="item_upload"),
     path("staff/items/analyze/", views.analyze_images_ajax, name="analyze_images_ajax"),
+    path("staff/dashboard/", views.AdminDashboardView.as_view(), name="admin_dashboard"),
 ]
 
 
