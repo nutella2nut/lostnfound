@@ -17,7 +17,7 @@
   <aside class="m-4 flex hidden w-80 flex-col rounded-[2.5rem] bg-[#0F172A] shadow-2xl xl:flex">
     <div class="p-10 pt-12">
       <!-- LOGO -->
-      <div class="mb-10 flex items-center gap-4 px-2 select-none">
+      <a href="{% url 'inventory:item_list' %}" class="mb-10 flex items-center gap-4 px-2 select-none cursor-pointer hover:opacity-80 transition-opacity">
         <!-- Icon -->
         <div class="relative h-14 w-14">
           <!-- Gradient Pin -->
@@ -39,7 +39,7 @@
           <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-3xl font-black tracking-tight text-transparent">Trace</h1>
           <p class="text-xs font-bold tracking-widest text-slate-400 uppercase">Lost & Found • AI Powered</p>
         </div>
-      </div>
+      </a>
 
       <nav class="space-y-1">
         <!-- All Items (Default) -->
