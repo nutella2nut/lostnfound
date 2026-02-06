@@ -224,18 +224,15 @@
                 <div class="h-full w-full bg-gradient-to-br from-slate-700 to-slate-900 transition-transform duration-700 group-hover:scale-105"></div>
               {% endif %}
               <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
-              <!-- Category Badge -->
-              <div class="absolute top-3 sm:top-5 left-3 sm:left-5 z-10">
+              <!-- Category and Claimed Badges (top left) -->
+              <div class="absolute top-3 sm:top-5 left-3 sm:left-5 z-10 flex flex-col gap-1.5 sm:gap-2">
                 <span class="rounded-lg sm:rounded-xl {% if item.category == 'ELECTRONICS' %}bg-[#8B5CF6]{% elif item.category == 'BAGS_AND_CARRY' %}bg-blue-600{% elif item.category == 'SPORTS_AND_CLOTHING' %}bg-pink-600{% elif item.category == 'BOTTLES_AND_CONTAINERS' %}bg-teal-600{% elif item.category == 'DOCUMENTS_AND_IDS' %}bg-yellow-600{% elif item.category == 'NOTEBOOKS_AND_BOOKS' %}bg-indigo-600{% else %}bg-slate-700{% endif %} px-2 sm:px-4 py-1 sm:py-2 text-[8px] sm:text-[10px] font-black tracking-widest text-white uppercase shadow-lg">
                   {{ item.get_category_display|lower }}
                 </span>
-              </div>
-              <!-- Claimed Badge (bottom right of image) -->
-              {% if item.status == 'CLAIMED' %}
-              <div class="absolute bottom-3 sm:bottom-5 right-3 sm:right-5 z-10">
+                {% if item.status == 'CLAIMED' %}
                 <span class="rounded-lg sm:rounded-xl bg-green-600 px-2 sm:px-4 py-1 sm:py-2 text-[8px] sm:text-[10px] font-black tracking-widest text-white uppercase shadow-lg">Claimed</span>
+                {% endif %}
               </div>
-              {% endif %}
               <!-- Title (clickable) -->
               <div class="absolute bottom-3 sm:bottom-6 left-3 sm:left-6 right-3 sm:right-6 z-10">
                 <h3 class="text-lg sm:text-xl md:text-2xl leading-tight font-bold tracking-tight text-white hover:text-cyan-300 transition-colors line-clamp-2">{{ item.title }}</h3>

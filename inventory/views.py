@@ -282,7 +282,7 @@ class AdminDashboardView(LoginRequiredMixin, StaffRequiredMixin, View):
                         'id': message_id,
                         'item_title': item.title,
                         'claimant_name': item.claimed_by_name,
-                        'claimed_at': item.claimed_at,
+                        'claimed_at': item.claimed_at.isoformat(),  # Convert datetime to string for JSON serialization
                     })
         
         # Store updated messages in session
