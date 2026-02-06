@@ -35,7 +35,7 @@
 
 <!-- SIDEBAR: The 7 Sections -->
 <div class="flex min-h-screen flex-nowrap">
-  <aside id="sidebar" class="fixed xl:static inset-y-0 left-0 z-50 m-4 xl:m-4 flex flex-col w-80 max-w-[85vw] rounded-[2.5rem] bg-[#0F172A] shadow-2xl transform -translate-x-full xl:translate-x-0 transition-transform duration-300">
+  <aside id="sidebar" class="fixed xl:static inset-y-0 left-0 z-50 xl:m-4 flex flex-col w-80 max-w-[85vw] rounded-[2.5rem] bg-[#0F172A] shadow-2xl transform -translate-x-full xl:translate-x-0 transition-transform duration-300">
     <div class="p-6 md:p-10 pt-12 overflow-y-auto h-full">
       <!-- Close button for mobile -->
       <button onclick="closeMobileMenu()" class="xl:hidden absolute top-4 right-4 text-slate-400 hover:text-white">
@@ -116,7 +116,7 @@
   <!-- MAIN AREA -->
   <main class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 w-full xl:w-auto">
     <!-- Top Header: Auth Toggle Area -->
-    <header class="mb-6 md:mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-12 xl:pt-0">
+    <header class="mb-6 md:mb-10 flex flex-col sm:flex-row justify-between xl:justify-end items-start sm:items-center gap-4 pt-12 xl:pt-0">
       <div class="xl:hidden">
         <a href="{% url 'inventory:item_list' %}" class="flex items-center gap-2">
           <div class="relative h-10 w-10">
@@ -134,7 +134,7 @@
           <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-2xl font-black tracking-tight text-transparent">Trace</h1>
         </a>
       </div>
-      <div id="auth-button-container" class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+      <div id="auth-button-container" class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto xl:w-auto">
         {% if user.is_authenticated and user.is_staff %}
           <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95 text-center">Logout</a>
           <a href="{% url 'inventory:item_upload' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Upload Item</a>
