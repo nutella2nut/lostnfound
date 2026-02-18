@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.utils import timezone
 from datetime import timedelta
 
-from .models import Item, ItemImage
+from .models import Item, ItemImage, StudentLostItem, StudentLostItemImage, UserProfile, Claim
 
 
 class ItemImageInline(admin.TabularInline):
@@ -13,13 +13,16 @@ class ItemImageInline(admin.TabularInline):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    list_display = ("title", "status", "claimed_info", "location_found", "date_found", "created_by", "created_at")
-    list_filter = ("status", "location_found", "date_found", "created_at", "claimed_at")
+    list_display = ("title", "status", "approval_status", "item_type", "claimed_info", "location_found", "date_found", "created_by", "created_at")
+    list_filter = ("status", "approval_status", "item_type", "category", "location_found", "date_found", "created_at", "claimed_at")
     search_fields = ("title", "description", "location_found", "claimed_by_name")
     readonly_fields = ("created_at", "updated_at", "claimed_at", "claimed_notification")
     fieldsets = (
         ("Item Information", {
             "fields": ("title", "description", "category", "location_found", "date_found")
+        }),
+        ("Approval & Type", {
+            "fields": ("approval_status", "item_type")
         }),
         ("Status", {
             "fields": ("status", "claimed_by_name", "claimed_at", "claimed_notification")
@@ -88,5 +91,78 @@ class ItemAdmin(admin.ModelAdmin):
 @admin.register(ItemImage)
 class ItemImageAdmin(admin.ModelAdmin):
     list_display = ("item", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("item__title",)
+
+
+class StudentLostItemImageInline(admin.TabularInline):
+    model = StudentLostItemImage
+    extra = 1
+
+
+@admin.register(StudentLostItem)
+class StudentLostItemAdmin(admin.ModelAdmin):
+    list_display = ("title", "approval_status", "email_from", "submitted_at", "approved_by", "approved_at")
+    list_filter = ("approval_status", "submitted_at", "approved_at")
+    search_fields = ("title", "description", "email_from", "email_subject")
+    readonly_fields = ("submitted_at", "email_subject", "email_from")
+    fieldsets = (
+        ("Item Information", {
+            "fields": ("title", "description")
+        }),
+        ("Email Information", {
+            "fields": ("email_subject", "email_from", "submitted_at"),
+            "classes": ("collapse",)
+        }),
+        ("Approval", {
+            "fields": ("approval_status", "approved_by", "approved_at")
+        }),
+    )
+    inlines = [StudentLostItemImageInline]
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('approved_by')
+
+
+@admin.register(StudentLostItemImage)
+class StudentLostItemImageAdmin(admin.ModelAdmin):
+    list_display = ("student_item", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("student_item__title",)
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "is_super_user", "user_is_staff")
+    list_filter = ("is_super_user",)
+    search_fields = ("user__username", "user__email")
+    readonly_fields = ("user",)
+    
+    def user_is_staff(self, obj):
+        return obj.user.is_staff
+    user_is_staff.boolean = True
+    user_is_staff.short_description = "Is Staff"
+    
+    fieldsets = (
+        ("User", {
+            "fields": ("user",)
+        }),
+        ("Lost & Found Permissions", {
+            "fields": ("is_super_user",)
+        }),
+    )
+
+
+@admin.register(Claim)
+class ClaimAdmin(admin.ModelAdmin):
+    list_display = ("item", "claimant_name", "claimed_at")
+    list_filter = ("claimed_at",)
+    search_fields = ("item__title", "claimant_name")
+    readonly_fields = ("claimed_at",)
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('item')
 
 

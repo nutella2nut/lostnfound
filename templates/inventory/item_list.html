@@ -143,6 +143,7 @@
           {% if is_super_user %}
           <a href="{% url 'inventory:approval_queue' %}" class="inline-block rounded-xl bg-yellow-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-yellow-500/30 transition hover:bg-yellow-700 active:scale-95 text-center">Approval Queue</a>
           {% endif %}
+          <a href="/admin/" class="inline-block rounded-xl bg-indigo-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-700 active:scale-95 text-center">Django Admin</a>
         {% else %}
           <a href="{% url 'login' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Staff Login</a>
         {% endif %}
