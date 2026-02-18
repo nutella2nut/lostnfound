@@ -122,6 +122,109 @@ input[type=url]:focus, input[type=number]:focus, textarea:focus, select:focus {
     background: #f1f5f9;
 }
 
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    /* Table headers in dark mode */
+    #result_list thead th,
+    thead th,
+    .results thead th {
+        background: #1e293b !important;
+        color: #f1f5f9 !important;
+        border-bottom: 2px solid #334155 !important;
+    }
+    
+    /* Table body in dark mode */
+    #result_list tbody tr:hover,
+    tbody tr:hover {
+        background: #334155 !important;
+    }
+    
+    /* Table cells in dark mode */
+    #result_list td,
+    td {
+        color: #e2e8f0 !important;
+    }
+    
+    /* Links in dark mode */
+    #result_list a,
+    a:link,
+    a:visited {
+        color: #06b6d4 !important;
+    }
+    
+    /* Breadcrumbs in dark mode */
+    .breadcrumbs {
+        background: #1e293b !important;
+        color: #e2e8f0 !important;
+        border-bottom: 1px solid #334155 !important;
+    }
+    
+    .breadcrumbs a {
+        color: #06b6d4 !important;
+    }
+    
+    /* Form inputs in dark mode */
+    input[type=text],
+    input[type=password],
+    input[type=email],
+    input[type=url],
+    input[type=number],
+    textarea,
+    select {
+        background: #1e293b !important;
+        color: #e2e8f0 !important;
+        border-color: #334155 !important;
+    }
+    
+    input[type=text]:focus,
+    input[type=password]:focus,
+    input[type=email]:focus,
+    input[type=url]:focus,
+    input[type=number]:focus,
+    textarea:focus,
+    select:focus {
+        border-color: #06b6d4 !important;
+        background: #1e293b !important;
+    }
+    
+    /* Filters in dark mode */
+    #changelist-filter {
+        background: #1e293b !important;
+        color: #e2e8f0 !important;
+    }
+    
+    #changelist-filter h3 {
+        color: #e2e8f0 !important;
+    }
+    
+    #changelist-filter li a {
+        color: #cbd5e1 !important;
+    }
+    
+    #changelist-filter li.selected a {
+        color: #06b6d4 !important;
+    }
+    
+    /* Module background in dark mode */
+    .module {
+        background: #1e293b !important;
+    }
+    
+    .module table {
+        background: #1e293b !important;
+    }
+    
+    /* Dashboard modules in dark mode */
+    #recent-actions-module {
+        background: #1e293b !important;
+    }
+    
+    /* Action checkboxes in dark mode */
+    .action-checkbox {
+        background: #1e293b !important;
+    }
+}
+
 /* Action checkboxes */
 .action-checkbox {
     padding: 8px;

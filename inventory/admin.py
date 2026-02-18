@@ -1,14 +1,31 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 from django.utils import timezone
 from datetime import timedelta
 
 from .models import Item, ItemImage, StudentLostItem, StudentLostItemImage, UserProfile, Claim
+from .views import is_super_user
 
-# Customize admin site
-admin.site.site_header = "Trace Lost & Found Administration"
-admin.site.site_title = "Lost & Found Admin"
-admin.site.index_title = "Welcome to Lost & Found Administration"
+User = get_user_model()
+
+# Custom AdminSite that restricts access to Super Users only
+class SuperUserOnlyAdminSite(admin.AdminSite):
+    """Custom admin site that only allows Super Users to access."""
+    
+    def has_permission(self, request):
+        """Only Super Users can access Django admin."""
+        return (
+            request.user and
+            request.user.is_active and
+            is_super_user(request.user)
+        )
+
+# Replace the default admin site with our custom one
+admin.site = SuperUserOnlyAdminSite(name='admin')
+
+# Using default Django admin - no customizations
 
 
 class ItemImageInline(admin.TabularInline):
@@ -169,5 +186,99 @@ class ClaimAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('item')
+
+
+# Custom User Admin for Super Users to manage roles
+class UserProfileInline(admin.StackedInline):
+    """Inline admin for UserProfile to show is_super_user field."""
+    model = UserProfile
+    can_delete = False
+    verbose_name_plural = "Lost & Found Profile"
+    fields = ("is_super_user",)
+    fk_name = "user"
+
+
+class CustomUserAdmin(BaseUserAdmin):
+    """Custom User admin that allows Super Users to manage is_staff and is_super_user."""
+    
+    inlines = (UserProfileInline,)
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Make is_staff readonly for non-Super Users."""
+        readonly = list(super().get_readonly_fields(request, obj))
+        # Only Super Users can edit is_staff
+        if not is_super_user(request.user):
+            if "is_staff" not in readonly:
+                readonly.append("is_staff")
+        return readonly
+    
+    def get_fieldsets(self, request, obj=None):
+        """Ensure is_staff is visible and editable for Super Users."""
+        fieldsets = super().get_fieldsets(request, obj)
+        
+        # For Super Users, ensure is_staff is in the Permissions fieldset
+        if is_super_user(request.user):
+            fieldsets_list = list(fieldsets)
+            for i, (name, fieldset_dict) in enumerate(fieldsets_list):
+                if name == "Permissions":
+                    # Ensure is_staff is in the fields
+                    fields = list(fieldset_dict.get("fields", ()))
+                    if "is_staff" not in fields:
+                        fields.append("is_staff")
+                    fieldsets_list[i] = (
+                        name,
+                        {
+                            **fieldset_dict,
+                            "fields": tuple(fields),
+                        },
+                    )
+                    break
+            return tuple(fieldsets_list)
+        
+        return fieldsets
+    
+    def get_inline_instances(self, request, obj=None):
+        """Ensure UserProfile exists before inline formset is created."""
+        if obj:
+            # Ensure UserProfile exists for existing users
+            UserProfile.objects.get_or_create(user=obj)
+        return super().get_inline_instances(request, obj)
+    
+    def save_model(self, request, obj, form, change):
+        """Save the user model."""
+        super().save_model(request, obj, form, change)
+        # Ensure UserProfile exists after saving (for new users)
+        if not change:  # Only for new users
+            UserProfile.objects.get_or_create(user=obj)
+    
+    def save_formset(self, request, form, formset, change):
+        """Handle UserProfile inline saving - prevent duplicate creation."""
+        if formset.model == UserProfile:
+            # For UserProfile inline, ensure we're updating existing instance, not creating new
+            instances = formset.save(commit=False)
+            for instance in instances:
+                if not instance.pk:
+                    # If no pk, try to get existing UserProfile
+                    try:
+                        existing_profile = UserProfile.objects.get(user=form.instance)
+                        # Update existing profile with form data
+                        existing_profile.is_super_user = instance.is_super_user
+                        existing_profile.save()
+                    except UserProfile.DoesNotExist:
+                        # If it doesn't exist, create it
+                        instance.user = form.instance
+                        instance.save()
+                else:
+                    # Update existing instance
+                    instance.save()
+            # Delete any marked for deletion
+            for obj in formset.deleted_objects:
+                obj.delete()
+        else:
+            # For other inlines, use default behavior
+            super().save_formset(request, form, formset, change)
+
+# Note: User admin registration is handled in apps.py ready() method
+# to ensure proper order and avoid AlreadyRegistered errors
 
 

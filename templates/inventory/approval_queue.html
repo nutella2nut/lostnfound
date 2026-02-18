@@ -20,6 +20,53 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 40;
         }
+        /* Image modal */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+        .image-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        /* Details modal */
+        .details-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        .details-modal.active {
+            display: flex;
+        }
+        .details-modal-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            max-width: 90%;
+            width: 600px;
+            max-height: 90%;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body class="bg-[#F8FAFC] text-slate-900">
@@ -65,14 +112,34 @@
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
           <span class="font-bold">Browse Items</span>
         </a>
+        <a href="{% url 'inventory:primary_years_list' %}" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          <span class="font-bold">Primary Years</span>
+        </a>
+        <a href="{% url 'inventory:student_lost_items_list' %}" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+          <span class="font-bold">Students' Lost Items</span>
+        </a>
+        <a href="{% url 'inventory:admin_dashboard' %}" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          <span class="font-bold">Admin Dashboard</span>
+        </a>
+        {% if is_super_user %}
         <a href="{% url 'inventory:approval_queue' %}" class="flex items-center gap-4 rounded-2xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 px-4 py-3 transition-all">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
           <span class="font-bold">Approval Queue</span>
         </a>
+        {% endif %}
         <a href="{% url 'inventory:item_upload' %}" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           <span class="font-medium">Upload Item</span>
         </a>
+        {% if is_super_user %}
+        <a href="/admin/" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <span class="font-medium">Django Admin</span>
+        </a>
+        {% endif %}
       </nav>
     </div>
   </aside>
@@ -101,7 +168,9 @@
       <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto xl:w-auto">
         <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95 text-center">Logout</a>
         <a href="{% url 'inventory:item_list' %}" class="inline-block rounded-xl bg-slate-700 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-slate-800 active:scale-95 text-center">Browse Items</a>
+        {% if is_super_user %}
         <a href="/admin/" class="inline-block rounded-xl bg-indigo-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-700 active:scale-95 text-center">Django Admin</a>
+        {% endif %}
       </div>
     </header>
 
@@ -117,63 +186,126 @@
       </p>
     </div>
 
-    <!-- Pending Items -->
+    <!-- Items Table -->
     {% if pending_items %}
-    <div class="space-y-6">
-      {% for pending_item in pending_items %}
-      <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white shadow-lg p-4 sm:p-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-          <div class="flex-1">
-            <h3 class="text-xl sm:text-2xl font-black text-[#0F172A] mb-2">{{ pending_item.item.title }}</h3>
-            <div class="flex flex-wrap gap-2">
-              <span class="rounded-lg bg-purple-600 px-3 py-1 text-xs font-bold text-white uppercase">
+    <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white shadow-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="pl-4 pr-2 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider w-16">#</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Date</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Item Details</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Type</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Preview</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Submitted By</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for pending_item in pending_items %}
+            <tr class="bg-white hover:bg-slate-50 transition-colors">
+              <td class="pl-4 pr-2 py-3 text-xs sm:text-sm font-bold text-slate-900">{{ pending_item.item.pk }}</td>
+              <td class="px-4 py-3 text-xs sm:text-sm text-slate-700">
                 {% if pending_item.type == 'admin_item' %}
-                  Admin Item - {{ pending_item.item_type_display }}
+                  {{ pending_item.item.created_at|date:"M d, Y" }}
                 {% else %}
-                  Student Lost Item
+                  {{ pending_item.item.submitted_at|date:"M d, Y" }}
                 {% endif %}
-              </span>
-            </div>
-          </div>
-          <div class="flex gap-2">
-            {% if pending_item.type == 'admin_item' %}
-            <form method="post" action="{% url 'inventory:approve_item' 'admin' pending_item.item.pk %}" class="inline">
-              {% csrf_token %}
-              <button type="submit" class="rounded-xl bg-green-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-green-700">Approve</button>
-            </form>
-            <form method="post" action="{% url 'inventory:reject_item' 'admin' pending_item.item.pk %}" class="inline">
-              {% csrf_token %}
-              <button type="submit" class="rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-red-700">Reject</button>
-            </form>
-            {% else %}
-            <form method="post" action="{% url 'inventory:approve_item' 'student' pending_item.item.pk %}" class="inline">
-              {% csrf_token %}
-              <button type="submit" class="rounded-xl bg-green-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-green-700">Approve</button>
-            </form>
-            <form method="post" action="{% url 'inventory:reject_item' 'student' pending_item.item.pk %}" class="inline">
-              {% csrf_token %}
-              <button type="submit" class="rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-red-700">Reject</button>
-            </form>
-            {% endif %}
-          </div>
-        </div>
-        {% if pending_item.item.description %}
-        <p class="text-sm text-slate-600 mb-4">{{ pending_item.item.description }}</p>
-        {% endif %}
-        {% if pending_item.item.images.exists %}
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {% for image in pending_item.item.images.all|slice:":6" %}
-          <img src="{{ image.image.url }}" alt="{{ pending_item.item.title }}" class="rounded-lg w-full h-32 object-cover">
-          {% endfor %}
-        </div>
-        {% endif %}
-        {% if pending_item.type == 'student_item' %}
-        <p class="text-xs text-slate-500 mt-4">Submitted by: {{ pending_item.item.email_from }} on {{ pending_item.item.submitted_at|date:"M d, Y" }}</p>
-        {% else %}
-        <p class="text-xs text-slate-500 mt-4">Uploaded by: {{ pending_item.item.created_by.username|default:"Unknown" }} on {{ pending_item.item.created_at|date:"M d, Y" }}</p>
-        {% endif %}
+              </td>
+              <td class="px-4 py-3 text-xs sm:text-sm font-medium text-slate-900">
+                <div class="max-w-xs">
+                  <div 
+                    class="text-cyan-600 hover:text-cyan-800 hover:underline cursor-pointer truncate"
+                    onclick="openDetailsModal('{{ pending_item.item.title|escapejs }}', '{{ pending_item.item.description|escapejs|default:"" }}')"
+                    title="Click to view full details"
+                  >
+                    {{ pending_item.item.title }}
+                  </div>
+                  {% if pending_item.item.description %}
+                    <div 
+                      class="text-xs text-slate-500 mt-1 truncate cursor-pointer hover:text-slate-700"
+                      onclick="openDetailsModal('{{ pending_item.item.title|escapejs }}', '{{ pending_item.item.description|escapejs }}')"
+                      title="Click to view full description"
+                    >
+                      {{ pending_item.item.description }}
+                    </div>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-bold {% if pending_item.type == 'admin_item' %}bg-purple-100 text-purple-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                  {% if pending_item.type == 'admin_item' %}
+                    Admin - {{ pending_item.item_type_display }}
+                  {% else %}
+                    Student Lost Item
+                  {% endif %}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                {% if pending_item.type == 'admin_item' %}
+                  {% if pending_item.item.images.first %}
+                    <img 
+                      src="{{ pending_item.item.images.first.image.url }}" 
+                      alt="{{ pending_item.item.title }}" 
+                      class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                      onclick="openImageModal('{{ pending_item.item.images.first.image.url }}', '{{ pending_item.item.title }}')"
+                    >
+                  {% else %}
+                    <span class="text-xs text-slate-400">No image</span>
+                  {% endif %}
+                {% else %}
+                  {% if pending_item.item.images.first %}
+                    <img 
+                      src="{{ pending_item.item.images.first.image.url }}" 
+                      alt="{{ pending_item.item.title }}" 
+                      class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                      onclick="openImageModal('{{ pending_item.item.images.first.image.url }}', '{{ pending_item.item.title }}')"
+                    >
+                  {% else %}
+                    <span class="text-xs text-slate-400">No image</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-xs sm:text-sm text-slate-700">
+                {% if pending_item.type == 'admin_item' %}
+                  {{ pending_item.item.created_by.username|default:"Unknown" }}
+                {% else %}
+                  {{ pending_item.item.email_from }}
+                {% endif %}
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex gap-2">
+                  {% if pending_item.type == 'admin_item' %}
+                  <form method="post" action="{% url 'inventory:approve_item' 'admin' pending_item.item.pk %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg transition hover:bg-green-700 active:scale-95 touch-manipulation">Approve</button>
+                  </form>
+                  <form method="post" action="{% url 'inventory:reject_item' 'admin' pending_item.item.pk %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg transition hover:bg-red-700 active:scale-95 touch-manipulation">Reject</button>
+                  </form>
+                  {% else %}
+                  <form method="post" action="{% url 'inventory:approve_item' 'student' pending_item.item.pk %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg transition hover:bg-green-700 active:scale-95 touch-manipulation">Approve</button>
+                  </form>
+                  <form method="post" action="{% url 'inventory:reject_item' 'student' pending_item.item.pk %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg transition hover:bg-red-700 active:scale-95 touch-manipulation">Reject</button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="px-4 py-8 text-center text-slate-500">No items pending approval.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
-      {% endfor %}
     </div>
 
     <!-- Pagination -->
@@ -199,7 +331,49 @@
   </main>
 </div>
 
+<!-- Image Modal -->
+<div id="imageModal" class="image-modal" onclick="closeImageModal()">
+  <img id="modalImage" class="image-modal-content" src="" alt="">
+  <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white text-4xl font-bold hover:text-gray-300">×</button>
+</div>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="details-modal" onclick="if(event.target === this) closeDetailsModal()">
+  <div class="details-modal-content" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-black text-slate-900">Item Details</h3>
+      <button onclick="closeDetailsModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold leading-none">×</button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <h4 class="text-sm font-bold text-slate-600 uppercase tracking-wider mb-1">Title</h4>
+        <p id="detailsTitle" class="text-base font-medium text-slate-900"></p>
+      </div>
+      <div>
+        <h4 class="text-sm font-bold text-slate-600 uppercase tracking-wider mb-1">Description</h4>
+        <p id="detailsDescription" class="text-sm text-slate-700 whitespace-pre-wrap"></p>
+      </div>
+    </div>
+    <div class="mt-4 flex justify-end">
+      <button onclick="closeDetailsModal()" class="rounded-xl bg-slate-300 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-400 transition">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
+// Mobile menu functionality
+function openMobileMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    if (sidebar && overlay) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
 function closeMobileMenu() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('mobile-menu-overlay');
@@ -210,21 +384,71 @@ function closeMobileMenu() {
     }
 }
 
+// Image modal functionality
+function openImageModal(imageUrl, imageTitle) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    modalImage.src = imageUrl;
+    modalImage.alt = imageTitle;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Details modal functionality
+function openDetailsModal(title, description) {
+    const modal = document.getElementById('detailsModal');
+    const titleEl = document.getElementById('detailsTitle');
+    const descEl = document.getElementById('detailsDescription');
+    
+    titleEl.textContent = title || 'No title';
+    descEl.textContent = description || 'No description available.';
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDetailsModal() {
+    const modal = document.getElementById('detailsModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    
     if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-menu-overlay');
-            if (sidebar && overlay) {
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
+        mobileMenuBtn.addEventListener('click', openMobileMenu);
+    }
+    
+    const navLinks = document.querySelectorAll('#sidebar nav a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth < 1280) {
+                closeMobileMenu();
             }
         });
-    }
+    });
+    
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 1280) {
+            closeMobileMenu();
+        }
+    });
+    
+    // Close modals on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeImageModal();
+            closeDetailsModal();
+        }
+    });
 });
 </script>
 </body>
 </html>
-
