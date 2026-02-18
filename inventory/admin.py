@@ -5,6 +5,11 @@ from datetime import timedelta
 
 from .models import Item, ItemImage, StudentLostItem, StudentLostItemImage, UserProfile, Claim
 
+# Customize admin site
+admin.site.site_header = "Trace Lost & Found Administration"
+admin.site.site_title = "Lost & Found Admin"
+admin.site.index_title = "Welcome to Lost & Found Administration"
+
 
 class ItemImageInline(admin.TabularInline):
     model = ItemImage
