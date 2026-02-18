@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Trace - Lost & Found</title>
+    <title>Students' Lost Items - Trace</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -71,45 +71,11 @@
       </a>
 
       <nav class="space-y-1">
-        <!-- Categories Section Header -->
+        <!-- Note: Student Lost Items don't have categories -->
         <div class="px-4 py-2 mb-2">
-          <p class="text-xs font-bold tracking-widest text-slate-500 uppercase">Categories</p>
+          <p class="text-xs font-bold tracking-widest text-slate-500 uppercase">No Categories</p>
+          <p class="text-xs text-slate-400 mt-1">Student items are not categorized</p>
         </div>
-        <!-- Electronics -->
-        <a href="{% url 'inventory:item_list' %}?category=ELECTRONICS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'ELECTRONICS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-          <span class="font-medium">Electronics</span>
-        </a>
-        <!-- Bags & Carry -->
-        <a href="{% url 'inventory:item_list' %}?category=BAGS_AND_CARRY{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'BAGS_AND_CARRY' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-          <span class="font-medium">Bags & Carry</span>
-        </a>
-        <!-- Clothing and Wearables -->
-        <a href="{% url 'inventory:item_list' %}?category=SPORTS_AND_CLOTHING{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'SPORTS_AND_CLOTHING' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-          <span class="font-medium">Sports & Clothing</span>
-        </a>
-        <!-- Bottles & Containers -->
-        <a href="{% url 'inventory:item_list' %}?category=BOTTLES_AND_CONTAINERS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'BOTTLES_AND_CONTAINERS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-          <span class="font-medium">Bottles & Containers</span>
-        </a>
-        <!-- Documents & IDs -->
-        <a href="{% url 'inventory:item_list' %}?category=DOCUMENTS_AND_IDS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'DOCUMENTS_AND_IDS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          <span class="font-medium">Documents & IDs</span>
-        </a>
-        <!-- Notebooks & Books -->
-        <a href="{% url 'inventory:item_list' %}?category=NOTEBOOKS_AND_BOOKS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'NOTEBOOKS_AND_BOOKS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-          <span class="font-medium">Notebooks & Books</span>
-        </a>
-        <!-- Other / Misc -->
-        <a href="{% url 'inventory:item_list' %}?category=OTHER_MISC{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'OTHER_MISC' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
-          <span class="font-medium">Other / Misc</span>
-        </a>
       </nav>
     </div>
   </aside>
@@ -140,9 +106,6 @@
           <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95 text-center">Logout</a>
           <a href="{% url 'inventory:item_upload' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Upload Item</a>
           <a href="{% url 'inventory:admin_dashboard' %}" class="inline-block rounded-xl bg-cyan-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-700 active:scale-95 text-center">Admin Dashboard</a>
-          {% if is_super_user %}
-          <a href="{% url 'inventory:approval_queue' %}" class="inline-block rounded-xl bg-yellow-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-yellow-500/30 transition hover:bg-yellow-700 active:scale-95 text-center">Approval Queue</a>
-          {% endif %}
         {% else %}
           <a href="{% url 'login' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Staff Login</a>
         {% endif %}
@@ -152,8 +115,8 @@
     <!-- Main Page Navigation Tabs -->
     <div class="mb-6 md:mb-8">
       <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-        <!-- Browse Items (Senior Years) - Active -->
-        <a href="{% url 'inventory:item_list' %}" class="flex-1 sm:flex-none rounded-xl sm:rounded-2xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 px-4 sm:px-6 py-3 sm:py-4 text-center text-sm sm:text-base font-bold transition-all hover:bg-cyan-600 active:scale-95">
+        <!-- Browse Items (Senior Years) -->
+        <a href="{% url 'inventory:item_list' %}" class="flex-1 sm:flex-none rounded-xl sm:rounded-2xl bg-white border-2 border-slate-200 text-slate-700 shadow-lg px-4 sm:px-6 py-3 sm:py-4 text-center text-sm sm:text-base font-bold transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-95">
           <div class="flex items-center justify-center gap-2">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
             <span>Browse Items</span>
@@ -166,8 +129,8 @@
             <span>Primary Years</span>
           </div>
         </a>
-        <!-- Students' Lost Items -->
-        <a href="{% url 'inventory:student_lost_items_list' %}" class="flex-1 sm:flex-none rounded-xl sm:rounded-2xl bg-white border-2 border-slate-200 text-slate-700 shadow-lg px-4 sm:px-6 py-3 sm:py-4 text-center text-sm sm:text-base font-bold transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-95">
+        <!-- Students' Lost Items - Active -->
+        <a href="{% url 'inventory:student_lost_items_list' %}" class="flex-1 sm:flex-none rounded-xl sm:rounded-2xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 px-4 sm:px-6 py-3 sm:py-4 text-center text-sm sm:text-base font-bold transition-all hover:bg-cyan-600 active:scale-95">
           <div class="flex items-center justify-center gap-2">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
             <span>Students' Lost Items</span>
@@ -178,8 +141,7 @@
     
     <!-- Search Bar -->
     <div class="mb-8 md:mb-12">
-      <form method="get" action="{% url 'inventory:item_list' %}" class="group relative" id="search-form">
-        {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+      <form method="get" action="{% url 'inventory:student_lost_items_list' %}" class="group relative" id="search-form">
         <input 
           type="text" 
           name="q"
@@ -193,7 +155,7 @@
           <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </button>
         {% if search_query %}
-        <a href="{% url 'inventory:item_list' %}{% if current_category %}?category={{ current_category }}{% endif %}" class="absolute top-1/2 right-4 sm:right-6 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" title="Clear search">
+        <a href="{% url 'inventory:student_lost_items_list' %}" class="absolute top-1/2 right-4 sm:right-6 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" title="Clear search">
           <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </a>
         {% endif %}
@@ -203,13 +165,9 @@
     <!-- Feed Header -->
     <div class="mb-6 md:mb-8 flex items-end justify-between px-2">
       <div>
-        <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0F172A] uppercase">Inventory Feed</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0F172A] uppercase">Students' Lost Items</h2>
         <p class="mt-1 text-sm sm:text-base font-bold text-slate-500">
-          {% if current_category %}
-            Viewing {{ current_category|lower|title }} items
-          {% else %}
-            Viewing all recently found items
-          {% endif %}
+          Viewing approved student-submitted lost items
         </p>
       </div>
     </div>
@@ -219,8 +177,8 @@
     <div class="grid grid-cols-1 gap-6 sm:gap-8 md:gap-10 p-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
       {% for item in items %}
         {% with first_image=item.images.first %}
-        <div class="group rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white p-3 sm:p-4 shadow-lg transition-all duration-500 hover:shadow-2xl {% if item.status == 'CLAIMED' %}opacity-75{% endif %}" data-item-id="{{ item.pk }}">
-          <a href="{% url 'inventory:item_detail' item.pk %}" class="block">
+        <div class="group rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white p-3 sm:p-4 shadow-lg transition-all duration-500 hover:shadow-2xl" data-item-id="{{ item.pk }}">
+              <a href="{% url 'inventory:student_lost_item_detail' item.pk %}" class="block">
             <div class="relative mb-4 sm:mb-6 h-48 sm:h-64 md:h-72 overflow-hidden rounded-xl sm:rounded-[2rem] bg-slate-900 cursor-pointer image-carousel-container">
               {% if first_image %}
                 <div class="h-full w-full image-carousel-wrapper relative">
@@ -253,14 +211,11 @@
                 <div class="h-full w-full bg-gradient-to-br from-slate-700 to-slate-900 transition-transform duration-700 group-hover:scale-105"></div>
               {% endif %}
               <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
-              <!-- Category and Claimed Badges (top left) -->
+              <!-- Student Item Badge (top left) -->
               <div class="absolute top-3 sm:top-5 left-3 sm:left-5 z-10 flex flex-col gap-1.5 sm:gap-2">
-                <span class="rounded-lg sm:rounded-xl {% if item.category == 'ELECTRONICS' %}bg-[#8B5CF6]{% elif item.category == 'BAGS_AND_CARRY' %}bg-blue-600{% elif item.category == 'SPORTS_AND_CLOTHING' %}bg-pink-600{% elif item.category == 'BOTTLES_AND_CONTAINERS' %}bg-teal-600{% elif item.category == 'DOCUMENTS_AND_IDS' %}bg-yellow-600{% elif item.category == 'NOTEBOOKS_AND_BOOKS' %}bg-indigo-600{% else %}bg-slate-700{% endif %} px-2 sm:px-4 py-1 sm:py-2 text-[8px] sm:text-[10px] font-black tracking-widest text-white uppercase shadow-lg">
-                  {{ item.get_category_display|lower }}
+                <span class="rounded-lg sm:rounded-xl bg-purple-600 px-2 sm:px-4 py-1 sm:py-2 text-[8px] sm:text-[10px] font-black tracking-widest text-white uppercase shadow-lg">
+                  Student Lost Item
                 </span>
-                {% if item.status == 'CLAIMED' %}
-                <span class="rounded-lg sm:rounded-xl bg-green-600 px-2 sm:px-4 py-1 sm:py-2 text-[8px] sm:text-[10px] font-black tracking-widest text-white uppercase shadow-lg">Claimed</span>
-                {% endif %}
               </div>
               <!-- Title (clickable) -->
               <div class="absolute bottom-3 sm:bottom-6 left-3 sm:left-6 right-3 sm:right-6 z-10">
@@ -269,12 +224,12 @@
             </div>
           </a>
           <div class="px-1 sm:px-2 pb-2 relative">
-            <!-- Location & Time -->
+            <!-- Submitted Info -->
             <p class="mb-2 sm:mb-3 flex items-center gap-2 text-xs sm:text-sm font-bold text-[#0F172A] flex-wrap">
-              <svg class="h-3 w-3 sm:h-4 sm:w-4 text-cyan-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-              <span class="truncate">{{ item.location_found|default:"Unknown location" }}</span>
+              <svg class="h-3 w-3 sm:h-4 sm:w-4 text-cyan-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+              <span class="truncate">{{ item.email_from }}</span>
               <span class="hidden sm:inline">•</span>
-              <span class="whitespace-nowrap">{{ item.date_found|timesince }} ago</span>
+              <span class="whitespace-nowrap">Submitted {{ item.submitted_at|timesince }} ago</span>
             </p>
             <!-- Description -->
             <div class="mb-4 sm:mb-5 min-h-[3rem] sm:min-h-[4rem] border-l-4 border-slate-200 pl-2 sm:pl-3 text-xs sm:text-sm text-slate-500 italic line-clamp-3">
@@ -284,24 +239,9 @@
                 <span class="text-slate-400">No description available</span>
               {% endif %}
             </div>
-            <!-- Claimed Message -->
-            {% if item.status == 'CLAIMED' %}
-            <div class="mb-3 sm:mb-4 rounded-lg sm:rounded-xl {% if item.claim_count > 1 %}bg-yellow-50 border border-yellow-200{% else %}bg-blue-50 border border-blue-200{% endif %} p-2 sm:p-3">
-              <p class="text-xs sm:text-sm {% if item.claim_count > 1 %}text-yellow-800{% else %}text-blue-800{% endif %} font-medium text-center">
-                {% if item.claim_count > 1 %}
-                  ⚠️ {{ item.claim_count }} people have claimed this item. You can still claim it if it is yours.
-                {% else %}
-                  You can still claim this item if it is yours
-                {% endif %}
-              </p>
-            </div>
-            {% endif %}
             <!-- Buttons -->
             <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <a href="{% url 'inventory:item_detail' item.pk %}" class="flex-1 rounded-xl sm:rounded-2xl bg-slate-700 py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-white uppercase shadow-lg transition-all hover:bg-slate-800">View Details</a>
-              {% if item.status != 'CLAIMED' %}
-              <a href="{% url 'inventory:item_detail' item.pk %}" class="flex-1 rounded-xl sm:rounded-2xl bg-[#06B6D4] py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-white uppercase shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-600">Claim Item</a>
-              {% endif %}
+              <a href="{% url 'inventory:student_lost_item_detail' item.pk %}" class="flex-1 rounded-xl sm:rounded-2xl bg-slate-700 py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-white uppercase shadow-lg transition-all hover:bg-slate-800">View Details</a>
             </div>
           </div>
         </div>

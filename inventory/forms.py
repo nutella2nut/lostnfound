@@ -15,7 +15,7 @@ class ItemForm(forms.ModelForm):
 
     class Meta:
         model = Item
-        fields = ["title", "description", "location_found", "date_found", "status", "category"]
+        fields = ["title", "description", "location_found", "date_found", "status", "category", "item_type"]
 
 
 ItemImageFormSet = inlineformset_factory(

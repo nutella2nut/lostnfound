@@ -1,0 +1,229 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Approval Queue - Trace Lost & Found</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        html, body { overflow-x: hidden; max-width: 100vw; }
+        .mobile-menu-overlay {
+            display: none;
+        }
+        .mobile-menu-overlay.active {
+            display: block;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+        }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900">
+<!-- Mobile Menu Button -->
+<button id="mobile-menu-btn" class="xl:hidden fixed top-4 left-4 z-50 bg-[#0F172A] text-white p-3 rounded-xl shadow-lg">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+    </svg>
+</button>
+
+<!-- Mobile Menu Overlay -->
+<div id="mobile-menu-overlay" class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+
+<!-- SIDEBAR -->
+<div class="flex min-h-screen flex-nowrap">
+  <aside id="sidebar" class="fixed xl:static inset-y-0 left-0 z-50 xl:m-4 flex flex-col w-80 max-w-[85vw] rounded-[2.5rem] bg-[#0F172A] shadow-2xl transform -translate-x-full xl:translate-x-0 transition-transform duration-300">
+    <div class="p-6 md:p-10 pt-12 overflow-y-auto h-full">
+      <button onclick="closeMobileMenu()" class="xl:hidden absolute top-4 right-4 text-slate-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+      <a href="{% url 'inventory:item_list' %}" class="mb-10 flex items-center gap-4 px-2 select-none cursor-pointer hover:opacity-80 transition-opacity">
+        <div class="relative h-14 w-14">
+          <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500 shadow-xl"></div>
+          <div class="absolute -bottom-1 -left-1 h-8 w-4 rotate-45 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
+          <div class="absolute inset-2 flex items-center justify-center rounded-full bg-[#0F172A]">
+            <svg viewBox="0 0 24 24" class="h-7 w-7 text-cyan-400" fill="currentColor">
+              <rect x="4" y="6" width="16" height="12" rx="4" />
+              <circle cx="9" cy="12" r="1.3" />
+              <circle cx="15" cy="12" r="1.3" />
+              <rect x="11" y="2" width="2" height="3" rx="1" />
+            </svg>
+          </div>
+        </div>
+        <div class="leading-tight">
+          <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-3xl font-black tracking-tight text-transparent">Trace</h1>
+          <p class="text-xs font-bold tracking-widest text-slate-400 uppercase">Lost & Found • AI Powered</p>
+        </div>
+      </a>
+      <nav class="space-y-1">
+        <a href="{% url 'inventory:item_list' %}" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+          <span class="font-bold">Browse Items</span>
+        </a>
+        <a href="{% url 'inventory:approval_queue' %}" class="flex items-center gap-4 rounded-2xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+          <span class="font-bold">Approval Queue</span>
+        </a>
+        <a href="{% url 'inventory:item_upload' %}" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span class="font-medium">Upload Item</span>
+        </a>
+      </nav>
+    </div>
+  </aside>
+  
+  <!-- MAIN AREA -->
+  <main class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 w-full xl:w-auto">
+    <!-- Header -->
+    <header class="mb-6 md:mb-10 flex flex-col sm:flex-row justify-between xl:justify-end items-start sm:items-center gap-4 pt-12 xl:pt-0">
+      <div class="xl:hidden">
+        <a href="{% url 'inventory:item_list' %}" class="flex items-center gap-2">
+          <div class="relative h-10 w-10">
+            <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500"></div>
+            <div class="absolute -bottom-1 -left-1 h-6 w-3 rotate-45 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
+            <div class="absolute inset-2 flex items-center justify-center rounded-full bg-[#0F172A]">
+              <svg viewBox="0 0 24 24" class="h-5 w-5 text-cyan-400" fill="currentColor">
+                <rect x="4" y="6" width="16" height="12" rx="4" />
+                <circle cx="9" cy="12" r="1.3" />
+                <circle cx="15" cy="12" r="1.3" />
+                <rect x="11" y="2" width="2" height="3" rx="1" />
+              </svg>
+            </div>
+          </div>
+          <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-2xl font-black tracking-tight text-transparent">Trace</h1>
+        </a>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto xl:w-auto">
+        <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95 text-center">Logout</a>
+        <a href="{% url 'inventory:item_list' %}" class="inline-block rounded-xl bg-slate-700 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-slate-800 active:scale-95 text-center">Browse Items</a>
+      </div>
+    </header>
+
+    <!-- Page Title -->
+    <div class="mb-6 md:mb-8">
+      <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0F172A] mb-2 uppercase">Approval Queue</h1>
+      <p class="text-sm sm:text-base text-slate-500 font-medium">
+        {% if pending_admin_items_count or pending_student_items_count %}
+          {{ pending_admin_items_count }} admin item(s) and {{ pending_student_items_count }} student item(s) pending approval
+        {% else %}
+          No items pending approval
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Pending Items -->
+    {% if pending_items %}
+    <div class="space-y-6">
+      {% for pending_item in pending_items %}
+      <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white shadow-lg p-4 sm:p-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <div class="flex-1">
+            <h3 class="text-xl sm:text-2xl font-black text-[#0F172A] mb-2">{{ pending_item.item.title }}</h3>
+            <div class="flex flex-wrap gap-2">
+              <span class="rounded-lg bg-purple-600 px-3 py-1 text-xs font-bold text-white uppercase">
+                {% if pending_item.type == 'admin_item' %}
+                  Admin Item - {{ pending_item.item_type_display }}
+                {% else %}
+                  Student Lost Item
+                {% endif %}
+              </span>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            {% if pending_item.type == 'admin_item' %}
+            <form method="post" action="{% url 'inventory:approve_item' 'admin' pending_item.item.pk %}" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="rounded-xl bg-green-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-green-700">Approve</button>
+            </form>
+            <form method="post" action="{% url 'inventory:reject_item' 'admin' pending_item.item.pk %}" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-red-700">Reject</button>
+            </form>
+            {% else %}
+            <form method="post" action="{% url 'inventory:approve_item' 'student' pending_item.item.pk %}" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="rounded-xl bg-green-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-green-700">Approve</button>
+            </form>
+            <form method="post" action="{% url 'inventory:reject_item' 'student' pending_item.item.pk %}" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-red-700">Reject</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% if pending_item.item.description %}
+        <p class="text-sm text-slate-600 mb-4">{{ pending_item.item.description }}</p>
+        {% endif %}
+        {% if pending_item.item.images.exists %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {% for image in pending_item.item.images.all|slice:":6" %}
+          <img src="{{ image.image.url }}" alt="{{ pending_item.item.title }}" class="rounded-lg w-full h-32 object-cover">
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if pending_item.type == 'student_item' %}
+        <p class="text-xs text-slate-500 mt-4">Submitted by: {{ pending_item.item.email_from }} on {{ pending_item.item.submitted_at|date:"M d, Y" }}</p>
+        {% else %}
+        <p class="text-xs text-slate-500 mt-4">Uploaded by: {{ pending_item.item.created_by.username|default:"Unknown" }} on {{ pending_item.item.created_at|date:"M d, Y" }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="rounded-xl bg-white px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-slate-700 shadow-lg transition hover:bg-slate-50 w-full sm:w-auto text-center">← Previous</a>
+      {% endif %}
+      <span class="flex items-center rounded-xl bg-cyan-500 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      </span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="rounded-xl bg-white px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-slate-700 shadow-lg transition hover:bg-slate-50 w-full sm:w-auto text-center">Next →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white p-6 sm:p-12 text-center shadow-lg">
+      <p class="text-lg sm:text-xl font-bold text-slate-500">No items pending approval.</p>
+    </div>
+    {% endif %}
+  </main>
+</div>
+
+<script>
+function closeMobileMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    if (sidebar && overlay) {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            if (sidebar && overlay) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+        });
+    }
+});
+</script>
+</body>
+</html>
+

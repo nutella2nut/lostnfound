@@ -2,6 +2,22 @@ from django.conf import settings
 from django.db import models
 
 
+class UserProfile(models.Model):
+    """Extended user profile to track Super User status for Lost & Found system."""
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="lost_found_profile",
+    )
+    is_super_user = models.BooleanField(
+        default=False,
+        help_text="Super Users can approve items and upload without approval",
+    )
+
+    def __str__(self):
+        return f"{self.user.username} - {'Super User' if self.is_super_user else 'Admin'}"
+
+
 class Item(models.Model):
     class Status(models.TextChoices):
         FOUND = "FOUND", "Found"
@@ -15,6 +31,15 @@ class Item(models.Model):
         DOCUMENTS_AND_IDS = "DOCUMENTS_AND_IDS", "Documents and Id's"
         NOTEBOOKS_AND_BOOKS = "NOTEBOOKS_AND_BOOKS", "Notebooks/books"
         OTHER_MISC = "OTHER_MISC", "Other/Misc"
+
+    class ApprovalStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        REJECTED = "REJECTED", "Rejected"
+
+    class ItemType(models.TextChoices):
+        SENIOR = "SENIOR", "Senior Years"
+        PY = "PY", "Primary Years"
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -31,6 +56,20 @@ class Item(models.Model):
         choices=Category.choices,
         default=Category.OTHER_MISC,
         db_index=True,
+    )
+    approval_status = models.CharField(
+        max_length=20,
+        choices=ApprovalStatus.choices,
+        default=ApprovalStatus.APPROVED,
+        db_index=True,
+        help_text="Approval status for admin-uploaded items",
+    )
+    item_type = models.CharField(
+        max_length=10,
+        choices=ItemType.choices,
+        default=ItemType.SENIOR,
+        db_index=True,
+        help_text="Whether this item is for Senior Years or Primary Years",
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -50,6 +89,9 @@ class Item(models.Model):
             models.Index(fields=["status"]),
             models.Index(fields=["date_found"]),
             models.Index(fields=["category"]),
+            models.Index(fields=["approval_status"]),
+            models.Index(fields=["item_type"]),
+            models.Index(fields=["approval_status", "item_type"]),
         ]
 
     def __str__(self) -> str:
@@ -97,5 +139,57 @@ class ItemImage(models.Model):
 
     def __str__(self) -> str:
         return f"Image for {self.item_id}"
+
+
+class StudentLostItem(models.Model):
+    """Model for student-submitted lost items via email."""
+    class ApprovalStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        REJECTED = "REJECTED", "Rejected"
+
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    email_subject = models.CharField(max_length=500, help_text="Original email subject")
+    email_from = models.EmailField(help_text="Email address of the student who submitted")
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    approval_status = models.CharField(
+        max_length=20,
+        choices=ApprovalStatus.choices,
+        default=ApprovalStatus.PENDING,
+        db_index=True,
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="student_items_approved",
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-submitted_at"]
+        indexes = [
+            models.Index(fields=["approval_status"]),
+            models.Index(fields=["submitted_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class StudentLostItemImage(models.Model):
+    """Images for student-submitted lost items."""
+    student_item = models.ForeignKey(
+        StudentLostItem,
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
+    image = models.ImageField(upload_to="student_item_images/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"Image for {self.student_item_id}"
 
 

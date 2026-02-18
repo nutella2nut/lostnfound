@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Trace - Lost & Found</title>
+    <title>Primary Years Lost & Found - Trace</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -76,37 +76,37 @@
           <p class="text-xs font-bold tracking-widest text-slate-500 uppercase">Categories</p>
         </div>
         <!-- Electronics -->
-        <a href="{% url 'inventory:item_list' %}?category=ELECTRONICS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'ELECTRONICS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+        <a href="{% url 'inventory:primary_years_list' %}?category=ELECTRONICS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'ELECTRONICS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
           <span class="font-medium">Electronics</span>
         </a>
         <!-- Bags & Carry -->
-        <a href="{% url 'inventory:item_list' %}?category=BAGS_AND_CARRY{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'BAGS_AND_CARRY' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+        <a href="{% url 'inventory:primary_years_list' %}?category=BAGS_AND_CARRY{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'BAGS_AND_CARRY' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
           <span class="font-medium">Bags & Carry</span>
         </a>
         <!-- Clothing and Wearables -->
-        <a href="{% url 'inventory:item_list' %}?category=SPORTS_AND_CLOTHING{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'SPORTS_AND_CLOTHING' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+        <a href="{% url 'inventory:primary_years_list' %}?category=SPORTS_AND_CLOTHING{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'SPORTS_AND_CLOTHING' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
           <span class="font-medium">Sports & Clothing</span>
         </a>
         <!-- Bottles & Containers -->
-        <a href="{% url 'inventory:item_list' %}?category=BOTTLES_AND_CONTAINERS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'BOTTLES_AND_CONTAINERS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+        <a href="{% url 'inventory:primary_years_list' %}?category=BOTTLES_AND_CONTAINERS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'BOTTLES_AND_CONTAINERS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
           <span class="font-medium">Bottles & Containers</span>
         </a>
         <!-- Documents & IDs -->
-        <a href="{% url 'inventory:item_list' %}?category=DOCUMENTS_AND_IDS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'DOCUMENTS_AND_IDS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+        <a href="{% url 'inventory:primary_years_list' %}?category=DOCUMENTS_AND_IDS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'DOCUMENTS_AND_IDS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
           <span class="font-medium">Documents & IDs</span>
         </a>
         <!-- Notebooks & Books -->
-        <a href="{% url 'inventory:item_list' %}?category=NOTEBOOKS_AND_BOOKS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'NOTEBOOKS_AND_BOOKS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+        <a href="{% url 'inventory:primary_years_list' %}?category=NOTEBOOKS_AND_BOOKS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'NOTEBOOKS_AND_BOOKS' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
           <span class="font-medium">Notebooks & Books</span>
         </a>
         <!-- Other / Misc -->
-        <a href="{% url 'inventory:item_list' %}?category=OTHER_MISC{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'OTHER_MISC' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
+        <a href="{% url 'inventory:primary_years_list' %}?category=OTHER_MISC{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="flex items-center gap-4 rounded-2xl {% if current_category == 'OTHER_MISC' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}text-slate-400 hover:bg-white/5 hover:text-white{% endif %} px-4 py-3 transition-all">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
           <span class="font-medium">Other / Misc</span>
         </a>
@@ -140,9 +140,6 @@
           <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95 text-center">Logout</a>
           <a href="{% url 'inventory:item_upload' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Upload Item</a>
           <a href="{% url 'inventory:admin_dashboard' %}" class="inline-block rounded-xl bg-cyan-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-700 active:scale-95 text-center">Admin Dashboard</a>
-          {% if is_super_user %}
-          <a href="{% url 'inventory:approval_queue' %}" class="inline-block rounded-xl bg-yellow-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-yellow-500/30 transition hover:bg-yellow-700 active:scale-95 text-center">Approval Queue</a>
-          {% endif %}
         {% else %}
           <a href="{% url 'login' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Staff Login</a>
         {% endif %}
@@ -152,15 +149,15 @@
     <!-- Main Page Navigation Tabs -->
     <div class="mb-6 md:mb-8">
       <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-        <!-- Browse Items (Senior Years) - Active -->
-        <a href="{% url 'inventory:item_list' %}" class="flex-1 sm:flex-none rounded-xl sm:rounded-2xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 px-4 sm:px-6 py-3 sm:py-4 text-center text-sm sm:text-base font-bold transition-all hover:bg-cyan-600 active:scale-95">
+        <!-- Browse Items (Senior Years) -->
+        <a href="{% url 'inventory:item_list' %}" class="flex-1 sm:flex-none rounded-xl sm:rounded-2xl bg-white border-2 border-slate-200 text-slate-700 shadow-lg px-4 sm:px-6 py-3 sm:py-4 text-center text-sm sm:text-base font-bold transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-95">
           <div class="flex items-center justify-center gap-2">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
             <span>Browse Items</span>
           </div>
         </a>
-        <!-- Primary Years -->
-        <a href="{% url 'inventory:primary_years_list' %}" class="flex-1 sm:flex-none rounded-xl sm:rounded-2xl bg-white border-2 border-slate-200 text-slate-700 shadow-lg px-4 sm:px-6 py-3 sm:py-4 text-center text-sm sm:text-base font-bold transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-95">
+        <!-- Primary Years - Active -->
+        <a href="{% url 'inventory:primary_years_list' %}" class="flex-1 sm:flex-none rounded-xl sm:rounded-2xl bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 px-4 sm:px-6 py-3 sm:py-4 text-center text-sm sm:text-base font-bold transition-all hover:bg-cyan-600 active:scale-95">
           <div class="flex items-center justify-center gap-2">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
             <span>Primary Years</span>
@@ -178,7 +175,7 @@
     
     <!-- Search Bar -->
     <div class="mb-8 md:mb-12">
-      <form method="get" action="{% url 'inventory:item_list' %}" class="group relative" id="search-form">
+      <form method="get" action="{% url 'inventory:primary_years_list' %}" class="group relative" id="search-form">
         {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
         <input 
           type="text" 
@@ -193,7 +190,7 @@
           <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </button>
         {% if search_query %}
-        <a href="{% url 'inventory:item_list' %}{% if current_category %}?category={{ current_category }}{% endif %}" class="absolute top-1/2 right-4 sm:right-6 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" title="Clear search">
+        <a href="{% url 'inventory:primary_years_list' %}{% if current_category %}?category={{ current_category }}{% endif %}" class="absolute top-1/2 right-4 sm:right-6 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" title="Clear search">
           <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </a>
         {% endif %}
@@ -203,12 +200,12 @@
     <!-- Feed Header -->
     <div class="mb-6 md:mb-8 flex items-end justify-between px-2">
       <div>
-        <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0F172A] uppercase">Inventory Feed</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0F172A] uppercase">Primary Years Lost & Found</h2>
         <p class="mt-1 text-sm sm:text-base font-bold text-slate-500">
           {% if current_category %}
             Viewing {{ current_category|lower|title }} items
           {% else %}
-            Viewing all recently found items
+            Viewing all Primary Years found items
           {% endif %}
         </p>
       </div>
@@ -327,7 +324,7 @@
     {% else %}
     <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white p-6 sm:p-12 text-center shadow-lg">
       <p class="text-lg sm:text-xl font-bold text-slate-500">No items found matching your criteria.</p>
-      <a href="{% url 'inventory:item_list' %}" class="mt-4 inline-block rounded-xl bg-cyan-500 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-cyan-600">View All Items</a>
+      <a href="{% url 'inventory:primary_years_list' %}" class="mt-4 inline-block rounded-xl bg-cyan-500 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-cyan-600">View All Items</a>
     </div>
     {% endif %}
   </main>

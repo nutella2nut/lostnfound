@@ -14,21 +14,52 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView, TemplateView
 
 from .forms import ClaimItemForm, ItemForm, ItemImageFormSet
-from .models import Item
+from .models import Item, UserProfile, StudentLostItem
 from .services import analyze_item_images
 
 
-class StaffRequiredMixin(UserPassesTestMixin):
+def is_super_user(user):
+    """Check if user is a Super User for the Lost & Found system."""
+    if not user.is_authenticated:
+        return False
+    try:
+        return user.lost_found_profile.is_super_user
+    except (UserProfile.DoesNotExist, AttributeError):
+        return False
+
+
+def is_admin(user):
+    """Check if user is an Admin (staff but not Super User)."""
+    if not user.is_authenticated:
+        return False
+    return user.is_staff and not is_super_user(user)
+
+
+class SuperUserRequiredMixin(UserPassesTestMixin):
+    """Only Super Users can access."""
+    def test_func(self):
+        return is_super_user(self.request.user)
+
+
+class AdminOrSuperUserRequiredMixin(UserPassesTestMixin):
+    """Admins and Super Users can access."""
     def test_func(self):
         user = self.request.user
         return user.is_authenticated and user.is_staff
+
+
+class StaffRequiredMixin(UserPassesTestMixin):
+    """Staff (Admin) only - Super Users should use AdminOrSuperUserRequiredMixin."""
+    def test_func(self):
+        user = self.request.user
+        return user.is_authenticated and user.is_staff and not is_super_user(user)
 
 
 class LandingPageView(TemplateView):
     template_name = "inventory/landing.html"
 
 
-class ItemUploadView(LoginRequiredMixin, StaffRequiredMixin, View):
+class ItemUploadView(LoginRequiredMixin, AdminOrSuperUserRequiredMixin, View):
     template_name = "inventory/item_upload.html"
 
     def get(self, request):
@@ -70,6 +101,13 @@ class ItemUploadView(LoginRequiredMixin, StaffRequiredMixin, View):
 
         item = item_form.save(commit=False)
         item.created_by = request.user
+        
+        # Set approval status based on user role
+        if is_super_user(request.user):
+            item.approval_status = Item.ApprovalStatus.APPROVED
+        else:
+            item.approval_status = Item.ApprovalStatus.PENDING
+        
         item.save()
         
         # Only save formset if there are images
@@ -77,10 +115,16 @@ class ItemUploadView(LoginRequiredMixin, StaffRequiredMixin, View):
         if formset.has_changed():
             formset.save()
 
-        messages.success(
-            request,
-            f'Item "{item.title}" has been successfully uploaded!',
-        )
+        if is_super_user(request.user):
+            messages.success(
+                request,
+                f'Item "{item.title}" has been successfully uploaded and approved!',
+            )
+        else:
+            messages.success(
+                request,
+                f'Item "{item.title}" has been successfully uploaded and is pending approval!',
+            )
         return redirect(reverse("inventory:item_list"))
 
 
@@ -168,9 +212,11 @@ class ItemListView(ListView):
                 claimed_at__gte=cutoff_date
             )
         
-        # Combine FOUND items and CLAIMED items within duration
+        # Filter: Only approved items, only Senior Years items
         queryset = Item.objects.filter(
-            Q(status=Item.Status.FOUND) | claimed_q_objects
+            Q(status=Item.Status.FOUND) | claimed_q_objects,
+            approval_status=Item.ApprovalStatus.APPROVED,
+            item_type=Item.ItemType.SENIOR,
         ).prefetch_related('images', 'claims')
 
         # Category filter
@@ -269,7 +315,7 @@ class ClaimItemView(View):
         return redirect("inventory:item_detail", pk=pk)
 
 
-class AdminDashboardView(LoginRequiredMixin, StaffRequiredMixin, View):
+class AdminDashboardView(LoginRequiredMixin, AdminOrSuperUserRequiredMixin, View):
     """Admin dashboard showing all items in a table with claim information."""
     template_name = "inventory/admin_dashboard.html"
     paginate_by = 50
@@ -372,4 +418,227 @@ class AdminDashboardView(LoginRequiredMixin, StaffRequiredMixin, View):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
         
         return JsonResponse({'success': False}, status=400)
+
+
+class PrimaryYearsListView(ListView):
+    """Primary Years Lost and Found page - shows approved PY items."""
+    model = Item
+    template_name = "inventory/primary_years_list.html"
+    context_object_name = "items"
+    paginate_by = 20
+
+    def get_claim_duration_days(self, category):
+        """Return the number of days a claimed item should remain visible based on category."""
+        duration_map = {
+            Item.Category.ELECTRONICS: 7,
+            Item.Category.SPORTS_AND_CLOTHING: 3,
+            Item.Category.BAGS_AND_CARRY: 1,
+            Item.Category.BOTTLES_AND_CONTAINERS: 1,
+            Item.Category.OTHER_MISC: 1,
+            Item.Category.DOCUMENTS_AND_IDS: 1,
+            Item.Category.NOTEBOOKS_AND_BOOKS: 1,
+        }
+        return duration_map.get(category, 1)
+
+    def get_queryset(self):
+        now = timezone.now()
+        
+        # Build Q objects for claimed items that are still within their category-specific duration
+        claimed_q_objects = Q()
+        for category, _ in Item.Category.choices:
+            duration_days = self.get_claim_duration_days(category)
+            cutoff_date = now - timedelta(days=duration_days)
+            claimed_q_objects |= Q(
+                status=Item.Status.CLAIMED,
+                category=category,
+                claimed_at__isnull=False,
+                claimed_at__gte=cutoff_date
+            )
+        
+        # Filter: Only approved items, only Primary Years items
+        queryset = Item.objects.filter(
+            Q(status=Item.Status.FOUND) | claimed_q_objects,
+            approval_status=Item.ApprovalStatus.APPROVED,
+            item_type=Item.ItemType.PY,
+        ).prefetch_related('images', 'claims')
+
+        # Category filter
+        category = self.request.GET.get("category")
+        if category:
+            queryset = queryset.filter(category=category)
+
+        # Search query
+        q = self.request.GET.get("q")
+        if q:
+            queryset = queryset.filter(
+                Q(title__icontains=q) | Q(description__icontains=q)
+            )
+
+        location = self.request.GET.get("location")
+        if location:
+            queryset = queryset.filter(location_found__icontains=location)
+
+        date_from = parse_date(self.request.GET.get("date_from") or "")
+        if date_from:
+            queryset = queryset.filter(date_found__gte=date_from)
+
+        date_to = parse_date(self.request.GET.get("date_to") or "")
+        if date_to:
+            queryset = queryset.filter(date_found__lte=date_to)
+
+        return queryset.order_by('-date_found', '-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_category'] = self.request.GET.get("category", "")
+        context['search_query'] = self.request.GET.get("q", "")
+        context['all_categories'] = Item.Category.choices
+        return context
+
+
+class StudentLostItemsListView(ListView):
+    """Students' Lost Items page - shows approved student-submitted lost items."""
+    model = StudentLostItem
+    template_name = "inventory/student_lost_items_list.html"
+    context_object_name = "items"
+    paginate_by = 20
+
+    def get_queryset(self):
+        # Only show approved student lost items
+        queryset = StudentLostItem.objects.filter(
+            approval_status=StudentLostItem.ApprovalStatus.APPROVED
+        ).prefetch_related('images')
+
+        # Search query
+        q = self.request.GET.get("q")
+        if q:
+            queryset = queryset.filter(
+                Q(title__icontains=q) | Q(description__icontains=q)
+            )
+
+        return queryset.order_by('-submitted_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get("q", "")
+        return context
+
+
+class StudentLostItemDetailView(DetailView):
+    """Detail view for student-submitted lost items."""
+    model = StudentLostItem
+    template_name = "inventory/student_lost_item_detail.html"
+    context_object_name = "item"
+    
+    def get_queryset(self):
+        # Only show approved items
+        return StudentLostItem.objects.filter(
+            approval_status=StudentLostItem.ApprovalStatus.APPROVED
+        ).prefetch_related('images')
+
+
+class ApprovalQueueView(LoginRequiredMixin, SuperUserRequiredMixin, ListView):
+    """Approval queue for Super Users to approve/reject pending items."""
+    template_name = "inventory/approval_queue.html"
+    context_object_name = "pending_items"
+    paginate_by = 20
+
+    def get_queryset(self):
+        # Get all pending items (both Item and StudentLostItem)
+        pending_items = []
+        
+        # Pending admin-uploaded items
+        admin_items = Item.objects.filter(
+            approval_status=Item.ApprovalStatus.PENDING
+        ).prefetch_related('images', 'created_by').order_by('-created_at')
+        
+        for item in admin_items:
+            pending_items.append({
+                'type': 'admin_item',
+                'item': item,
+                'item_type_display': item.get_item_type_display(),
+            })
+        
+        # Pending student-submitted items
+        student_items = StudentLostItem.objects.filter(
+            approval_status=StudentLostItem.ApprovalStatus.PENDING
+        ).prefetch_related('images').order_by('-submitted_at')
+        
+        for item in student_items:
+            pending_items.append({
+                'type': 'student_item',
+                'item': item,
+            })
+        
+        # Sort by creation/submission date (most recent first)
+        pending_items.sort(key=lambda x: (
+            x['item'].created_at if hasattr(x['item'], 'created_at') else x['item'].submitted_at
+        ), reverse=True)
+        
+        return pending_items
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Count pending items by type
+        context['pending_admin_items_count'] = Item.objects.filter(
+            approval_status=Item.ApprovalStatus.PENDING
+        ).count()
+        context['pending_student_items_count'] = StudentLostItem.objects.filter(
+            approval_status=StudentLostItem.ApprovalStatus.PENDING
+        ).count()
+        return context
+
+
+class ApproveItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
+    """Approve a pending item (either Item or StudentLostItem)."""
+    
+    def post(self, request, item_type, item_id):
+        if item_type == 'admin':
+            item = get_object_or_404(Item, pk=item_id, approval_status=Item.ApprovalStatus.PENDING)
+            item.approval_status = Item.ApprovalStatus.APPROVED
+            item.save()
+            messages.success(request, f'Item "{item.title}" has been approved!')
+            return redirect('inventory:approval_queue')
+        elif item_type == 'student':
+            item = get_object_or_404(
+                StudentLostItem,
+                pk=item_id,
+                approval_status=StudentLostItem.ApprovalStatus.PENDING
+            )
+            item.approval_status = StudentLostItem.ApprovalStatus.APPROVED
+            item.approved_by = request.user
+            item.approved_at = timezone.now()
+            item.save()
+            messages.success(request, f'Student lost item "{item.title}" has been approved!')
+            return redirect('inventory:approval_queue')
+        else:
+            messages.error(request, 'Invalid item type.')
+            return redirect('inventory:approval_queue')
+
+
+class RejectItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
+    """Reject a pending item (either Item or StudentLostItem)."""
+    
+    def post(self, request, item_type, item_id):
+        if item_type == 'admin':
+            item = get_object_or_404(Item, pk=item_id, approval_status=Item.ApprovalStatus.PENDING)
+            item.approval_status = Item.ApprovalStatus.REJECTED
+            item.save()
+            messages.success(request, f'Item "{item.title}" has been rejected.')
+            return redirect('inventory:approval_queue')
+        elif item_type == 'student':
+            item = get_object_or_404(
+                StudentLostItem,
+                pk=item_id,
+                approval_status=StudentLostItem.ApprovalStatus.PENDING
+            )
+            item.approval_status = StudentLostItem.ApprovalStatus.REJECTED
+            item.approved_by = request.user
+            item.approved_at = timezone.now()
+            item.save()
+            messages.success(request, f'Student lost item "{item.title}" has been rejected.')
+            return redirect('inventory:approval_queue')
+        else:
+            messages.error(request, 'Invalid item type.')
+            return redirect('inventory:approval_queue')
 

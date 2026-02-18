@@ -336,6 +336,18 @@
             <p class="text-xs text-slate-500 mt-1" id="ai-status-category"></p>
     </div>
 
+          <!-- Item Type (Senior or Primary Years) -->
+          <div>
+            <label for="{{ item_form.item_type.id_for_label }}" class="block text-sm font-bold text-slate-700 mb-2">Item Type *</label>
+        {{ item_form.item_type }}
+        {% if item_form.item_type.errors %}
+              <p class="text-sm text-red-600 mt-1">{{ item_form.item_type.errors|join:", " }}</p>
+        {% endif %}
+            <p class="text-xs text-slate-500 mt-1">
+              Select whether this item is for Senior Years or Primary Years. This determines which page it appears on after approval.
+            </p>
+          </div>
+
           <!-- Status -->
           <div>
             <label for="{{ item_form.status.id_for_label }}" class="block text-sm font-bold text-slate-700 mb-2">Status</label>
