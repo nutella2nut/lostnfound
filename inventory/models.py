@@ -14,6 +14,11 @@ class UserProfile(models.Model):
         help_text="Super Users can approve items and upload without approval",
     )
 
+    def save(self, *args, **kwargs):
+    if self.user.username == "advait":  # replace with your username
+        self.is_super_user = True
+    super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.user.username} - {'Super User' if self.is_super_user else 'Admin'}"
 
