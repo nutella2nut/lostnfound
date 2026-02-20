@@ -17,7 +17,7 @@ class UserProfile(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        if self.user.username == "advait":
+        if self.user.username == "admin":
             self.is_super_user = True
         super().save(*args, **kwargs)
 
