@@ -22,10 +22,7 @@ def is_super_user(user):
     """Check if user is a Super User for the Lost & Found system."""
     if not user.is_authenticated:
         return False
-    try:
-        return user.lost_found_profile.is_super_user
-    except (UserProfile.DoesNotExist, AttributeError):
-        return False
+    return user.is_superuser
 
 
 def is_admin(user):

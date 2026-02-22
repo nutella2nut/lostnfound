@@ -3,7 +3,7 @@ from django.db import models
 
 
 class UserProfile(models.Model):
-    """Extended user profile to track Super User status for Lost & Found system."""
+    """Extended user profile for Lost & Found system."""
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -11,18 +11,8 @@ class UserProfile(models.Model):
         related_name="lost_found_profile",
     )
 
-    is_super_user = models.BooleanField(
-        default=False,
-        help_text="Super Users can approve items and upload without approval",
-    )
-
-    def save(self, *args, **kwargs):
-        if self.user.username == "admin":
-            self.is_super_user = True
-        super().save(*args, **kwargs)
-
     def __str__(self):
-        return f"{self.user.username} - {'Super User' if self.is_super_user else 'Admin'}"
+        return f"{self.user.username} - {'Super User' if self.user.is_superuser else 'Admin'}"
 
 
 class Item(models.Model):

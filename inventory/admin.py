@@ -156,10 +156,15 @@ class StudentLostItemImageAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "is_super_user", "user_is_staff")
-    list_filter = ("is_super_user",)
+    list_display = ("user", "user_is_superuser", "user_is_staff")
+    list_filter = ("user__is_superuser",)
     search_fields = ("user__username", "user__email")
     readonly_fields = ("user",)
+    
+    def user_is_superuser(self, obj):
+        return obj.user.is_superuser
+    user_is_superuser.boolean = True
+    user_is_superuser.short_description = "Is Superuser"
     
     def user_is_staff(self, obj):
         return obj.user.is_staff
@@ -169,9 +174,6 @@ class UserProfileAdmin(admin.ModelAdmin):
     fieldsets = (
         ("User", {
             "fields": ("user",)
-        }),
-        ("Lost & Found Permissions", {
-            "fields": ("is_super_user",)
         }),
     )
 
@@ -190,16 +192,16 @@ class ClaimAdmin(admin.ModelAdmin):
 
 # Custom User Admin for Super Users to manage roles
 class UserProfileInline(admin.StackedInline):
-    """Inline admin for UserProfile to show is_super_user field."""
+    """Inline admin for UserProfile."""
     model = UserProfile
     can_delete = False
     verbose_name_plural = "Lost & Found Profile"
-    fields = ("is_super_user",)
+    fields = ()  # UserProfile now only has user field (OneToOne)
     fk_name = "user"
 
 
 class CustomUserAdmin(BaseUserAdmin):
-    """Custom User admin that allows Super Users to manage is_staff and is_super_user."""
+    """Custom User admin that allows Super Users to manage is_staff."""
     
     inlines = (UserProfileInline,)
     
@@ -261,9 +263,8 @@ class CustomUserAdmin(BaseUserAdmin):
                     # If no pk, try to get existing UserProfile
                     try:
                         existing_profile = UserProfile.objects.get(user=form.instance)
-                        # Update existing profile with form data
-                        existing_profile.is_super_user = instance.is_super_user
-                        existing_profile.save()
+                        # Profile already exists, no need to update
+                        pass
                     except UserProfile.DoesNotExist:
                         # If it doesn't exist, create it
                         instance.user = form.instance

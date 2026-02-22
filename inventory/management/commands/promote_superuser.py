@@ -29,23 +29,27 @@ class Command(BaseCommand):
         # Ensure user is staff
         if not user.is_staff:
             user.is_staff = True
-            user.save()
             self.stdout.write(
                 self.style.WARNING(f'User "{username}" was not staff. Set is_staff=True.')
             )
         
-        # Get or create UserProfile
-        profile, created = UserProfile.objects.get_or_create(user=user)
-        if profile.is_super_user:
+        # Check if already a superuser
+        if user.is_superuser:
             self.stdout.write(
                 self.style.WARNING(f'User "{username}" is already a Super User.')
             )
         else:
-            profile.is_super_user = True
-            profile.save()
+            # Make them a Django superuser
+            user.is_superuser = True
             self.stdout.write(
                 self.style.SUCCESS(
                     f'Successfully promoted "{username}" to Super User status.'
                 )
             )
+        
+        # Save user changes
+        user.save()
+        
+        # Ensure UserProfile exists (for any future use)
+        UserProfile.objects.get_or_create(user=user)
 
