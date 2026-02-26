@@ -1,3 +1,4 @@
+import threading
 from datetime import timedelta
 
 from django.conf import settings
@@ -24,6 +25,8 @@ def send_system_email(subject: str, message: str, recipient_list: list[str]) -> 
     """
     Helper for sending system emails.
 
+    Sends asynchronously in a background thread so the web worker is not blocked
+    by slow or failing SMTP connections (avoids Gunicorn WORKER TIMEOUT).
     Uses Django's EMAIL_* settings and fails silently if email is not configured.
     """
     if not recipient_list:
@@ -35,21 +38,25 @@ def send_system_email(subject: str, message: str, recipient_list: list[str]) -> 
         # Email not configured – do nothing.
         return
 
-    try:
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=getattr(
-                settings, "DEFAULT_FROM_EMAIL", settings.EMAIL_HOST_USER
-            ),
-            recipient_list=recipient_list,
-            fail_silently=True,
-        )
-    except Exception:  # pragma: no cover - defensive logging
-        import logging
+    def _send():
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=getattr(
+                    settings, "DEFAULT_FROM_EMAIL", settings.EMAIL_HOST_USER
+                ),
+                recipient_list=recipient_list,
+                fail_silently=True,
+            )
+        except Exception:  # pragma: no cover - defensive logging
+            import logging
 
-        logger = logging.getLogger(__name__)
-        logger.exception("Failed to send system email")
+            logger = logging.getLogger(__name__)
+            logger.exception("Failed to send system email")
+
+    thread = threading.Thread(target=_send, daemon=True)
+    thread.start()
 
 
 def is_super_user(user):
