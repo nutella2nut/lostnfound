@@ -192,11 +192,31 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Google Gemini API Key (currently in use)
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
+#
+# Outgoing email configuration (SMTP)
+# Uses environment variables so it works locally and on Railway.
+#
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "noreply@example.com")
 
-# OpenAI API Key (commented out - kept for reference if switching back)
-# OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+#
+# Incoming email (IMAP) configuration for student submissions
+# These are used by the check_emails management command.
+#
+LF_EMAIL_ADDRESS = os.environ.get("LF_EMAIL_ADDRESS", "")
+LF_EMAIL_PASSWORD = os.environ.get("LF_EMAIL_PASSWORD", "")
+LF_IMAP_HOST = os.environ.get("LF_IMAP_HOST", "")
+LF_IMAP_PORT = int(os.environ.get("LF_IMAP_PORT", "993"))
+LF_IMAP_MAILBOX = os.environ.get("LF_IMAP_MAILBOX", "INBOX")
+LF_ALLOWED_SENDER_DOMAIN = os.environ.get("LF_ALLOWED_SENDER_DOMAIN", "@tisb.ac.in")
+
+# Google Gemini API Key (currently in use for AI features)
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 
 # Authentication
 LOGIN_URL = "login"

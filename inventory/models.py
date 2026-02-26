@@ -112,7 +112,15 @@ class Claim(models.Model):
         on_delete=models.CASCADE,
         related_name="claims",
     )
-    claimant_name = models.CharField(max_length=255, help_text="Name of person claiming this item")
+    claimant_name = models.CharField(
+        max_length=255,
+        help_text="Name of person claiming this item",
+    )
+    claimant_email = models.EmailField(
+        blank=True,
+        default="",
+        help_text="Email of the person claiming this item",
+    )
     claimed_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -147,8 +155,13 @@ class StudentLostItem(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    email_subject = models.CharField(max_length=500, help_text="Original email subject")
-    email_from = models.EmailField(help_text="Email address of the student who submitted")
+    email_subject = models.CharField(
+        max_length=500,
+        help_text="Original email subject",
+    )
+    email_from = models.EmailField(
+        help_text="Email address of the student who submitted",
+    )
     submitted_at = models.DateTimeField(auto_now_add=True)
     approval_status = models.CharField(
         max_length=20,

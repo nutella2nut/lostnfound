@@ -6,16 +6,26 @@ from .models import Item, ItemImage
 
 class ItemForm(forms.ModelForm):
     date_found = forms.DateField(
-        widget=DateInput(attrs={
-            'type': 'date',
-            'class': 'form-control',
-        }),
+        widget=DateInput(
+            attrs={
+                "type": "date",
+                "class": "form-control",
+            }
+        ),
         help_text="Format: DD/MM/YYYY",
     )
 
     class Meta:
         model = Item
-        fields = ["title", "description", "location_found", "date_found", "status", "category", "item_type"]
+        fields = [
+            "title",
+            "description",
+            "location_found",
+            "date_found",
+            "status",
+            "category",
+            "item_type",
+        ]
 
 
 ItemImageFormSet = inlineformset_factory(
@@ -30,16 +40,37 @@ ItemImageFormSet = inlineformset_factory(
 
 
 class ClaimItemForm(forms.Form):
-    """Form for claiming an item - captures claimant's name."""
+    """Form for claiming an item - captures claimant's name and email."""
+
     name = forms.CharField(
         max_length=255,
         required=True,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Enter your full name',
-            'required': True,
-        }),
-        help_text="Please enter your name so we can contact you when you arrive."
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Enter your full name",
+                "required": True,
+            }
+        ),
+        help_text="Please enter your name so we can contact you when you arrive.",
     )
+
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Enter your @tisb.ac.in email",
+                "required": True,
+            }
+        ),
+        help_text="Must be a valid @tisb.ac.in email address.",
+    )
+
+    def clean_email(self):
+        email = (self.cleaned_data.get("email") or "").strip().lower()
+        if not email.endswith("@tisb.ac.in"):
+            raise forms.ValidationError("Please use your @tisb.ac.in email address.")
+        return email
 
 

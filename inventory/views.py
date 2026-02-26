@@ -1,7 +1,9 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -16,6 +18,38 @@ from django.views.generic import DetailView, ListView, TemplateView
 from .forms import ClaimItemForm, ItemForm, ItemImageFormSet
 from .models import Item, UserProfile, StudentLostItem
 from .services import analyze_item_images
+
+
+def send_system_email(subject: str, message: str, recipient_list: list[str]) -> None:
+    """
+    Helper for sending system emails.
+
+    Uses Django's EMAIL_* settings and fails silently if email is not configured.
+    """
+    if not recipient_list:
+        return
+
+    if not getattr(settings, "EMAIL_HOST", "") or not getattr(
+        settings, "EMAIL_HOST_USER", ""
+    ):
+        # Email not configured – do nothing.
+        return
+
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=getattr(
+                settings, "DEFAULT_FROM_EMAIL", settings.EMAIL_HOST_USER
+            ),
+            recipient_list=recipient_list,
+            fail_silently=True,
+        )
+    except Exception:  # pragma: no cover - defensive logging
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.exception("Failed to send system email")
 
 
 def is_super_user(user):
@@ -265,19 +299,21 @@ class ClaimItemView(View):
     
     def post(self, request, pk):
         from .models import Claim
-        
+
         item = get_object_or_404(Item, pk=pk)
         form = ClaimItemForm(request.POST)
-        
+
         if form.is_valid():
-            name = form.cleaned_data['name']
-            
+            name = form.cleaned_data["name"]
+            email = form.cleaned_data["email"]
+
             # Create a new claim (allows multiple claims per item)
             claim = Claim.objects.create(
                 item=item,
                 claimant_name=name,
+                claimant_email=email,
             )
-            
+
             # Update item status to CLAIMED if it's the first claim
             if item.status == Item.Status.FOUND:
                 item.status = Item.Status.CLAIMED
@@ -285,25 +321,43 @@ class ClaimItemView(View):
                 item.claimed_by_name = name
                 item.claimed_at = timezone.now()
                 item.save()
-            
+
+            # Send confirmation email to the student
+            send_system_email(
+                subject="Lost & Found claim confirmation",
+                message=(
+                    f'You have claimed "{item.title}". '
+                    "Please come to the reception to verify and collect it."
+                ),
+                recipient_list=[email],
+            )
+
             # Success message for the user claiming the item
             if item.claim_count > 1:
                 messages.success(
                     request,
-                    f'Item successfully claimed! Note: {item.claim_count} people have claimed this item. Pick it up from the reception.',
+                    f"Item successfully claimed! Note: {item.claim_count} people have claimed this item. Pick it up from the reception.",
                 )
             else:
                 messages.success(
                     request,
-                    'Item successfully claimed! Pick it up from the reception.',
+                    "Item successfully claimed! Pick it up from the reception.",
                 )
-            
+
             # Also log for admin visibility
             import logging
+
             logger = logging.getLogger(__name__)
-            logger.info(f"Item '{item.title}' (ID: {item.pk}) claimed by {name} at {claim.claimed_at}")
-            
-        elif not form.is_valid():
+            logger.info(
+                "Item '%s' (ID: %s) claimed by %s (%s) at %s",
+                item.title,
+                item.pk,
+                name,
+                email,
+                claim.claimed_at,
+            )
+
+        else:
             # If form is invalid, show errors
             for field, errors in form.errors.items():
                 for error in errors:
@@ -606,6 +660,16 @@ class ApproveItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             item.approved_by = request.user
             item.approved_at = timezone.now()
             item.save()
+            # Notify the student that their submission was approved
+            if item.email_from:
+                send_system_email(
+                    subject="Lost & Found submission approved",
+                    message=(
+                        f'Your submission "{item.title}" has been approved and is now '
+                        "visible in the Lost & Found listing."
+                    ),
+                    recipient_list=[item.email_from],
+                )
             messages.success(request, f'Student lost item "{item.title}" has been approved!')
             return redirect('inventory:approval_queue')
         else:
@@ -617,24 +681,40 @@ class RejectItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
     """Reject a pending item (either Item or StudentLostItem)."""
     
     def post(self, request, item_type, item_id):
-        if item_type == 'admin':
-            item = get_object_or_404(Item, pk=item_id, approval_status=Item.ApprovalStatus.PENDING)
+        if item_type == "admin":
+            item = get_object_or_404(
+                Item,
+                pk=item_id,
+                approval_status=Item.ApprovalStatus.PENDING,
+            )
             item.approval_status = Item.ApprovalStatus.REJECTED
             item.save()
             messages.success(request, f'Item "{item.title}" has been rejected.')
-            return redirect('inventory:approval_queue')
-        elif item_type == 'student':
+            return redirect("inventory:approval_queue")
+        elif item_type == "student":
             item = get_object_or_404(
                 StudentLostItem,
                 pk=item_id,
-                approval_status=StudentLostItem.ApprovalStatus.PENDING
+                approval_status=StudentLostItem.ApprovalStatus.PENDING,
             )
             item.approval_status = StudentLostItem.ApprovalStatus.REJECTED
             item.approved_by = request.user
             item.approved_at = timezone.now()
             item.save()
-            messages.success(request, f'Student lost item "{item.title}" has been rejected.')
-            return redirect('inventory:approval_queue')
+            # Notify the student that their submission was rejected
+            if item.email_from:
+                send_system_email(
+                    subject="Lost & Found submission rejected",
+                    message=(
+                        f'Your submission "{item.title}" was reviewed but '
+                        "could not be approved."
+                    ),
+                    recipient_list=[item.email_from],
+                )
+            messages.success(
+                request, f'Student lost item "{item.title}" has been rejected.'
+            )
+            return redirect("inventory:approval_queue")
         else:
             messages.error(request, 'Invalid item type.')
             return redirect('inventory:approval_queue')
