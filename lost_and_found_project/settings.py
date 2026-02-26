@@ -223,6 +223,30 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "inventory:item_list"
 LOGOUT_REDIRECT_URL = "inventory:item_list"
 
+# Logging: send inventory (e.g. email) errors to stdout so they appear in Railway logs
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {
+            "format": "{levelname} {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "loggers": {
+        "inventory": {
+            "handlers": ["console"],
+            "level": "WARNING",
+        },
+    },
+}
+
 import os
 from django.contrib.auth import get_user_model
 
