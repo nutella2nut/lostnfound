@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>How to Report a Lost Item - TRACE Lost & Found</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <!-- Top Nav -->
+    <nav class="bg-white border-b border-slate-200 px-4 sm:px-6 py-4">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <a href="{% url 'inventory:landing' %}" class="flex items-center gap-2">
+                <div class="relative h-10 w-10">
+                    <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500"></div>
+                    <div class="absolute inset-2 flex items-center justify-center rounded-full bg-white">
+                        <svg viewBox="0 0 24 24" class="h-5 w-5 text-cyan-500" fill="currentColor">
+                            <rect x="4" y="6" width="16" height="12" rx="4" />
+                            <circle cx="9" cy="12" r="1.3" />
+                            <circle cx="15" cy="12" r="1.3" />
+                            <rect x="11" y="2" width="2" height="3" rx="1" />
+                        </svg>
+                    </div>
+                </div>
+                <span class="bg-gradient-to-r from-teal-500 to-purple-500 bg-clip-text text-xl font-black text-transparent">TRACE</span>
+            </a>
+            <a href="{% url 'inventory:student_lost_items_list' %}" class="text-slate-500 hover:text-slate-700 font-medium text-sm">&larr; Back to Students' Lost Items</a>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-10">
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mb-6">How to report a lost item to TRACE</h1>
+
+            <p class="text-slate-600 mb-6">If you have lost a personal item at school, you may submit a report by email. Reports are reviewed by TRACE staff before they appear publicly.</p>
+
+            <div class="bg-cyan-50 border border-cyan-200 rounded-xl p-4 mb-6">
+                <p class="font-bold text-slate-800 mb-1">Send an email to:</p>
+                <p class="text-cyan-700 font-mono text-lg">{{ email_address }}</p>
+            </div>
+
+            <h2 class="text-lg font-bold text-slate-800 mb-3">Your email must follow this exact format:</h2>
+            <ol class="list-decimal list-inside space-y-3 text-slate-600 mb-6 ml-2">
+                <li><strong>Subject line</strong> — the name of the item (for example: "Black water bottle with name sticker").</li>
+                <li><strong>Body</strong> — a clear description of the item, where you last had it, and approximately when you lost it. Do not include personal details beyond what is necessary to identify the item.</li>
+                <li><strong>Attachments</strong> — up to 8 images of the item (or of an identical item, if you do not have a photo of yours). Accepted formats: JPG, PNG, HEIC, WEBP, GIF, BMP. Maximum 15 MB per image, 40 MB total.</li>
+            </ol>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                <p class="font-bold text-amber-800">You must send the email from your TISB email address (<code class="text-amber-700">...@tisb.ac.in</code>). Emails from any other address will be ignored.</p>
+            </div>
+
+            <h2 class="text-lg font-bold text-slate-800 mb-3">What happens next:</h2>
+            <ol class="list-decimal list-inside space-y-2 text-slate-600 mb-6 ml-2">
+                <li>You will receive an automated confirmation within a few minutes.</li>
+                <li>A staff member will review your report. If approved, it will appear on the Students' Lost Items page.</li>
+                <li>Staff may choose to broadcast your report to a wider school audience.</li>
+                <li>If the item is found, you will be contacted at your TISB email. Items are released only in person at the school reception.</li>
+            </ol>
+
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <p class="font-bold text-red-800 mb-2">Do not use this system to:</p>
+                <ul class="list-disc list-inside text-red-700 space-y-1 ml-2">
+                    <li>Report items lost outside school premises.</li>
+                    <li>Make speculative or joke submissions.</li>
+                    <li>Submit on behalf of another student — they must submit from their own TISB email.</li>
+                </ul>
+                <p class="text-red-800 font-medium mt-3">Misuse of this system will be referred to the relevant Head of Year.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 px-4 text-xs text-slate-400">
+        TRACE is operated by TISB. All claims and reports are logged. Misuse will be referred to the relevant Head of Year.
+    </footer>
+</body>
+</html>

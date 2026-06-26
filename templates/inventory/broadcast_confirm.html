@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Broadcast to School - Trace Lost & Found</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        html, body { overflow-x: hidden; max-width: 100vw; }
+        .mobile-menu-overlay {
+            display: none;
+        }
+        .mobile-menu-overlay.active {
+            display: block;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+        }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900">
+<!-- Mobile Menu Button -->
+<button id="mobile-menu-btn" class="xl:hidden fixed top-4 left-4 z-50 bg-[#0F172A] text-white p-3 rounded-xl shadow-lg">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+    </svg>
+</button>
+
+<!-- Mobile Menu Overlay -->
+<div id="mobile-menu-overlay" class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+
+<!-- SIDEBAR -->
+<div class="flex min-h-screen flex-nowrap">
+  {% include "inventory/_sidebar.html" with sidebar_active="approval" %}
+
+  <!-- MAIN AREA -->
+  <main class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 w-full xl:w-auto">
+    {% include "inventory/_header.html" %}
+
+    <!-- Page Title -->
+    <div class="mb-6 md:mb-8">
+      <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0F172A] mb-2 uppercase">Broadcast to School</h1>
+      <p class="text-sm sm:text-base text-slate-500 font-medium">
+        Review and confirm the broadcast email for "{{ item.title }}"
+      </p>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="mb-4 rounded-2xl border p-4 {% if message.tags == 'error' %}border-red-200 bg-red-50 text-red-800{% elif message.tags == 'success' %}border-green-200 bg-green-50 text-green-800{% else %}border-blue-200 bg-blue-50 text-blue-800{% endif %}">
+      <p class="text-sm sm:text-base font-bold">{{ message }}</p>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if broadcast_count > 0 %}
+    <!-- Repeat Broadcast Warning -->
+    <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-6 flex items-start gap-3">
+      <svg class="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+      </svg>
+      <p class="text-sm sm:text-base font-bold text-amber-800">
+        This item has already been broadcast {{ broadcast_count }} time(s). Are you sure you want to send it again?
+      </p>
+    </div>
+    {% endif %}
+
+    <!-- Email Preview Card -->
+    <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white shadow-lg p-6 sm:p-8 mb-6">
+      <h2 class="text-lg sm:text-xl font-black text-slate-900 mb-6 uppercase">Email Preview</h2>
+      <div class="space-y-4">
+        <div>
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</h3>
+          <p class="text-sm sm:text-base font-medium text-slate-900">{{ subject }}</p>
+        </div>
+        <div>
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Recipients</h3>
+          <p class="text-sm sm:text-base text-slate-700">{{ recipients|join:", " }}</p>
+        </div>
+        <div>
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Body</h3>
+          <pre class="mt-1 whitespace-pre-wrap break-words rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-700 font-mono">{{ body }}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Form -->
+    <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white shadow-lg p-6 sm:p-8">
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-6">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" name="confirm" required class="mt-1 h-5 w-5 rounded border-slate-300 text-cyan-500 focus:ring-cyan-500">
+            <span class="text-sm sm:text-base font-medium text-slate-700">I have reviewed this email and confirm it is appropriate to send to the recipient list.</span>
+          </label>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 px-6 py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:shadow-xl hover:shadow-cyan-500/40 active:scale-95">
+            Send Broadcast
+          </button>
+          <a href="javascript:history.back()" class="inline-flex items-center justify-center rounded-xl bg-slate-200 px-6 py-3 text-sm sm:text-base font-bold text-slate-700 shadow-lg transition hover:bg-slate-300 active:scale-95 text-center">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+
+  </main>
+</div>
+
+<script>
+function openMobileMenu() { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('mobile-menu-overlay').classList.add('active'); }
+function closeMobileMenu() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobile-menu-overlay').classList.remove('active'); }
+document.getElementById('mobile-menu-btn').addEventListener('click', openMobileMenu);
+</script>
+</body>
+</html>

@@ -5,7 +5,10 @@ from django.utils.html import format_html
 from django.utils import timezone
 from datetime import timedelta
 
-from .models import Item, ItemImage, StudentLostItem, StudentLostItemImage, UserProfile, Claim
+from .models import (
+    Item, ItemImage, StudentLostItem, StudentLostItemImage, UserProfile, Claim,
+    MicrosoftOAuthToken, BroadcastLog, MagicLinkRequest, UserRoleChangeLog,
+)
 from .views import is_super_user
 
 User = get_user_model()
@@ -38,13 +41,13 @@ class ItemAdmin(admin.ModelAdmin):
     list_display = ("title", "status", "approval_status", "item_type", "claimed_info", "location_found", "date_found", "created_by", "created_at")
     list_filter = ("status", "approval_status", "item_type", "category", "location_found", "date_found", "created_at", "claimed_at")
     search_fields = ("title", "description", "location_found", "claimed_by_name")
-    readonly_fields = ("created_at", "updated_at", "claimed_at", "claimed_notification")
+    readonly_fields = ("created_at", "updated_at", "claimed_at", "claimed_notification", "approved_by", "approved_at")
     fieldsets = (
         ("Item Information", {
             "fields": ("title", "description", "category", "location_found", "date_found")
         }),
         ("Approval & Type", {
-            "fields": ("approval_status", "item_type")
+            "fields": ("approval_status", "item_type", "approved_by", "approved_at", "rejection_reason")
         }),
         ("Status", {
             "fields": ("status", "claimed_by_name", "claimed_at", "claimed_notification")
@@ -190,6 +193,42 @@ class ClaimAdmin(admin.ModelAdmin):
         return qs.select_related('item')
 
 
+@admin.register(MicrosoftOAuthToken)
+class MicrosoftOAuthTokenAdmin(admin.ModelAdmin):
+    list_display = ("account_email", "last_refreshed_at", "cached_access_token_expires_at")
+    readonly_fields = ("account_email", "scopes", "last_refreshed_at", "cached_access_token_expires_at", "created_at", "updated_at")
+    exclude = ("encrypted_refresh_token", "cached_access_token")
+    actions = ["revoke_and_clear"]
+
+    @admin.action(description="Revoke and clear token")
+    def revoke_and_clear(self, request, queryset):
+        queryset.delete()
+        self.message_user(request, "Token revoked. Re-run microsoft_oauth_setup to re-authorize.")
+
+
+@admin.register(BroadcastLog)
+class BroadcastLogAdmin(admin.ModelAdmin):
+    list_display = ("kind", "sent_at", "sent_by", "succeeded", "subject")
+    list_filter = ("kind", "succeeded", "sent_at")
+    readonly_fields = ("kind", "student_lost_item", "found_item", "sent_by", "sent_at", "recipients", "subject", "body_preview", "succeeded", "error_message")
+
+
+@admin.register(MagicLinkRequest)
+class MagicLinkRequestAdmin(admin.ModelAdmin):
+    list_display = ("email", "requested_at", "consumed_at", "ip_address")
+    list_filter = ("requested_at",)
+    search_fields = ("email",)
+    readonly_fields = ("email", "requested_at", "ip_address", "user_agent", "consumed_at")
+
+
+@admin.register(UserRoleChangeLog)
+class UserRoleChangeLogAdmin(admin.ModelAdmin):
+    list_display = ("action", "target_username_snapshot", "performed_by_username_snapshot", "created_at")
+    list_filter = ("action", "created_at")
+    search_fields = ("target_username_snapshot", "performed_by_username_snapshot")
+    readonly_fields = ("target_user", "target_username_snapshot", "performed_by", "performed_by_username_snapshot", "action", "details", "created_at")
+
+
 # Custom User Admin for Super Users to manage roles
 class UserProfileInline(admin.StackedInline):
     """Inline admin for UserProfile."""
@@ -253,6 +292,18 @@ class CustomUserAdmin(BaseUserAdmin):
         if not change:  # Only for new users
             UserProfile.objects.get_or_create(user=obj)
     
+    def changelist_view(self, request, extra_context=None):
+        """Add deprecation banner pointing to /staff/users/."""
+        extra_context = extra_context or {}
+        extra_context["deprecation_banner"] = format_html(
+            '<div style="background:#fef3c7;border:2px solid #fbbf24;border-radius:8px;padding:16px;margin-bottom:20px;">'
+            '<strong style="color:#92400e;">User management has moved.</strong> '
+            'Use the <a href="/staff/users/" style="color:#0891b2;font-weight:bold;">dedicated user management page</a> '
+            'instead of Django admin for creating, editing, and managing staff users.'
+            '</div>'
+        )
+        return super().changelist_view(request, extra_context=extra_context)
+
     def save_formset(self, request, form, formset, change):
         """Handle UserProfile inline saving - prevent duplicate creation."""
         if formset.model == UserProfile:

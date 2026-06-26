@@ -35,116 +35,38 @@
 
 <!-- SIDEBAR: The 7 Sections -->
 <div class="flex min-h-screen flex-nowrap">
-  <aside id="sidebar" class="fixed xl:static inset-y-0 left-0 z-50 xl:m-4 flex flex-col w-80 max-w-[85vw] rounded-[2.5rem] bg-[#0F172A] shadow-2xl transform -translate-x-full xl:translate-x-0 transition-transform duration-300">
-    <div class="p-6 md:p-10 pt-12 overflow-y-auto h-full">
-      <!-- Close button for mobile -->
-      <button onclick="closeMobileMenu()" class="xl:hidden absolute top-4 right-4 text-slate-400 hover:text-white">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-      <!-- LOGO -->
-      <a href="{% url 'inventory:item_list' %}" class="mb-10 flex items-center gap-4 px-2 select-none cursor-pointer hover:opacity-80 transition-opacity">
-        <!-- Icon -->
-        <div class="relative h-14 w-14">
-          <!-- Gradient Pin -->
-          <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500 shadow-xl"></div>
-          <!-- Magnifier Handle -->
-          <div class="absolute -bottom-1 -left-1 h-8 w-4 rotate-45 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
-          <!-- Robot Face -->
-          <div class="absolute inset-2 flex items-center justify-center rounded-full bg-[#0F172A]">
-            <svg viewBox="0 0 24 24" class="h-7 w-7 text-cyan-400" fill="currentColor">
-              <rect x="4" y="6" width="16" height="12" rx="4" />
-              <circle cx="9" cy="12" r="1.3" />
-              <circle cx="15" cy="12" r="1.3" />
-              <rect x="11" y="2" width="2" height="3" rx="1" />
-            </svg>
-          </div>
-        </div>
-        <!-- Text -->
-        <div class="leading-tight">
-          <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-3xl font-black tracking-tight text-transparent">Trace</h1>
-          <p class="text-xs font-bold tracking-widest text-slate-400 uppercase">Lost & Found • AI Powered</p>
-        </div>
-      </a>
-
-      <nav class="space-y-1">
-        <!-- All Items -->
-        <a href="{% url 'inventory:item_list' %}" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-          <span class="font-bold">All Items</span>
-        </a>
-        <!-- Electronics -->
-        <a href="{% url 'inventory:item_list' %}?category=ELECTRONICS" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
-          <span class="font-medium">Electronics</span>
-        </a>
-        <!-- Bags & Carry -->
-        <a href="{% url 'inventory:item_list' %}?category=BAGS_AND_CARRY" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-          <span class="font-medium">Bags & Carry</span>
-        </a>
-        <!-- Clothing and Wearables -->
-        <a href="{% url 'inventory:item_list' %}?category=SPORTS_AND_CLOTHING" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-          <span class="font-medium">Sports & Clothing</span>
-        </a>
-        <!-- Bottles & Containers -->
-        <a href="{% url 'inventory:item_list' %}?category=BOTTLES_AND_CONTAINERS" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-          <span class="font-medium">Bottles & Containers</span>
-        </a>
-        <!-- Documents & IDs -->
-        <a href="{% url 'inventory:item_list' %}?category=DOCUMENTS_AND_IDS" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          <span class="font-medium">Documents & IDs</span>
-        </a>
-        <!-- Notebooks & Books -->
-        <a href="{% url 'inventory:item_list' %}?category=NOTEBOOKS_AND_BOOKS" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-          <span class="font-medium">Notebooks & Books</span>
-        </a>
-        <!-- Other / Misc -->
-        <a href="{% url 'inventory:item_list' %}?category=OTHER_MISC" class="flex items-center gap-4 rounded-2xl text-slate-400 hover:bg-white/5 hover:text-white px-4 py-3 transition-all">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
-          <span class="font-medium">Other / Misc</span>
-        </a>
-      </nav>
-    </div>
-  </aside>
+  {% include "inventory/_sidebar.html" with sidebar_active="browse" %}
   
   <!-- MAIN AREA -->
   <main class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 w-full xl:w-auto">
-    <!-- Top Header: Auth Toggle Area -->
-    <header class="mb-6 md:mb-10 flex flex-col sm:flex-row justify-between xl:justify-end items-start sm:items-center gap-4 pt-12 xl:pt-0">
-      <div class="xl:hidden">
-        <a href="{% url 'inventory:item_list' %}" class="flex items-center gap-2">
-          <div class="relative h-10 w-10">
-            <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500"></div>
-            <div class="absolute -bottom-1 -left-1 h-6 w-3 rotate-45 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
-            <div class="absolute inset-2 flex items-center justify-center rounded-full bg-[#0F172A]">
-              <svg viewBox="0 0 24 24" class="h-5 w-5 text-cyan-400" fill="currentColor">
-                <rect x="4" y="6" width="16" height="12" rx="4" />
-                <circle cx="9" cy="12" r="1.3" />
-                <circle cx="15" cy="12" r="1.3" />
-                <rect x="11" y="2" width="2" height="3" rx="1" />
-              </svg>
-            </div>
-          </div>
-          <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-2xl font-black tracking-tight text-transparent">Trace</h1>
-        </a>
-      </div>
-      <div id="auth-button-container" class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto xl:w-auto">
-        {% if user.is_authenticated and user.is_staff %}
-          <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95 text-center">Logout</a>
-          <a href="{% url 'inventory:item_upload' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Upload Item</a>
-          <a href="{% url 'inventory:admin_dashboard' %}" class="inline-block rounded-xl bg-cyan-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-700 active:scale-95 text-center">Admin Dashboard</a>
-        {% else %}
-          <a href="{% url 'login' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Staff Login</a>
-        {% endif %}
-      </div>
-    </header>
+    {% include "inventory/_header.html" %}
     
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-4 space-y-2">
+      {% for message in messages %}
+      <div class="rounded-xl px-4 py-3 text-sm font-medium {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Super User Action Bar -->
+    {% if is_super_user and item.approval_status == 'APPROVED' %}
+    <div class="mb-4 rounded-xl bg-slate-50 border border-slate-200 p-4 flex flex-wrap items-center gap-3">
+      <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Staff Actions</span>
+      <a href="{% url 'inventory:broadcast_item' 'found' item.pk %}"
+         class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 px-3 py-1.5 text-xs font-bold text-white shadow-lg transition hover:shadow-xl hover:brightness-110 active:scale-95">
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+        Broadcast to school
+      </a>
+      {% if item.approved_by %}
+      <span class="text-xs text-slate-500">Approved by {{ item.approved_by.get_full_name|default:item.approved_by.username }} on {{ item.approved_at|date:"M d, Y" }}</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
     <!-- Back Button -->
     <div class="mb-6 md:mb-8">
       <a href="{% url 'inventory:item_list' %}" class="inline-flex items-center gap-2 text-sm sm:text-base text-slate-600 hover:text-cyan-600 transition-colors font-medium">
@@ -198,7 +120,7 @@
             <!-- Claimed Badge (if claimed) -->
             {% if item.status == 'CLAIMED' %}
             <div class="absolute top-3 sm:top-6 right-3 sm:right-6 z-10 {% if item.images.count > 1 %}mr-12 sm:mr-20{% endif %}">
-              <span class="rounded-lg sm:rounded-xl bg-green-600 px-2 sm:px-4 py-1 sm:py-2 text-[8px] sm:text-[10px] font-black tracking-widest text-white uppercase shadow-lg">✓ Claimed</span>
+              <span class="rounded-lg sm:rounded-xl bg-amber-500 px-2 sm:px-4 py-1 sm:py-2 text-[8px] sm:text-[10px] font-black tracking-widest text-white uppercase shadow-lg" title="One or more students have submitted claims for this item. The item is still in the possession of the school until collected in person from reception.">{% if item.claim_count > 1 %}{{ item.claim_count }} claims submitted{% else %}Claim submitted — awaiting collection{% endif %}</span>
             </div>
             {% endif %}
             
@@ -259,18 +181,15 @@
         
         <!-- Claimed Notice -->
         {% if item.status == 'CLAIMED' %}
-        <div class="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-yellow-50 border-2 border-yellow-200 p-4 sm:p-6">
+        <div class="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-amber-50 border-2 border-amber-200 p-4 sm:p-6">
           <div class="flex items-start gap-3">
-            <svg class="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <svg class="h-5 w-5 sm:h-6 sm:w-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             <div>
-              <h3 class="font-bold text-yellow-900 mb-1 text-sm sm:text-base">This item has been claimed</h3>
-              <p class="text-yellow-800 text-xs sm:text-sm">
-                {% if item.claimed_by_name %}
-                  <strong>{{ item.claimed_by_name }}</strong> has claimed this item{% if item.claimed_at %} on {{ item.claimed_at|date:"F d, Y" }}{% endif %}.
-                {% else %}
-                  This item has been claimed.
-                {% endif %}
-                You still have time to claim it if this is your item - please contact reception.
+              <h3 class="font-bold text-amber-900 mb-1 text-sm sm:text-base">
+                {% if item.claim_count > 1 %}{{ item.claim_count }} claims submitted{% else %}Claim submitted — awaiting collection{% endif %}
+              </h3>
+              <p class="text-amber-800 text-xs sm:text-sm">
+                One or more students have submitted claims for this item. The item is still in the possession of the school until collected in person from reception. If this item belongs to you, you may still submit your own claim below.
               </p>
             </div>
           </div>
@@ -289,58 +208,71 @@
           </div>
         </div>
         
-        <!-- Show all claimants if item has been claimed -->
-        {% if item.claims.exists %}
+        <!-- Show all claimants (staff only) -->
+        {% if item.claims.exists and user.is_authenticated and user.is_staff %}
         <div class="mb-4 sm:mb-6 rounded-xl sm:rounded-2xl bg-blue-50 border-2 border-blue-200 p-4 sm:p-6">
-          <h3 class="font-bold text-blue-900 mb-2 text-sm sm:text-base">Claimed By:</h3>
+          <h3 class="font-bold text-blue-900 mb-2 text-sm sm:text-base">Claims submitted ({{ item.claim_count }}):</h3>
           <ul class="space-y-1">
             {% for claim in item.claims.all %}
             <li class="text-blue-800 text-sm sm:text-base">
-              <strong>{{ claim.claimant_name }}</strong> - {{ claim.claimed_at|date:"M d, Y g:i A" }}
+              <strong>{{ claim.claimant_name }}</strong> ({{ claim.claimant_email }}) — {{ claim.claimed_at|date:"M d, Y g:i A" }}
             </li>
             {% endfor %}
           </ul>
           {% if item.claim_count > 1 %}
           <p class="mt-2 text-xs sm:text-sm text-blue-700 font-medium">
-            ⚠️ Multiple people have claimed this item. Please verify ownership at reception.
+            Multiple students have submitted claims for this item. Verify ownership at reception before releasing.
           </p>
           {% endif %}
         </div>
         {% endif %}
         
-        <!-- Action Buttons -->
+        <!-- Claim Form (§3.1) -->
         <div class="pt-4 sm:pt-6 border-t border-slate-200">
+          <h2 class="text-xl sm:text-2xl font-black text-[#0F172A] mb-2 uppercase tracking-tight">Claim this item</h2>
+          <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+            By submitting this form you are formally claiming that this specific item belongs to you. False claims, claims on behalf of someone else, and claims intended to deprive the rightful owner of their property are violations of the TISB Code of Conduct and will be referred to the relevant Head of Year.
+          </p>
           <div class="flex flex-col lg:flex-row gap-4 items-stretch lg:items-start">
-            <form method="post" action="{% url 'inventory:claim_item' item.pk %}" class="flex-1" id="claim-form">
+            <form method="post" action="{% url 'inventory:claim_item' item.pk %}" class="flex-1" id="claim-form" onsubmit="return openClaimConfirmModal(event)">
               {% csrf_token %}
               <div class="mb-3 sm:mb-4">
-                <label for="id_name" class="block text-sm font-bold text-slate-700 mb-2">Your Name *</label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  id="id_name" 
+                <label for="id_name" class="block text-sm font-bold text-slate-700 mb-2">Full name (as it appears on your TISB record) *</label>
+                <input
+                  type="text"
+                  name="name"
+                  id="id_name"
                   required
+                  minlength="2"
+                  maxlength="100"
                   placeholder="Enter your full name"
                   class="w-full rounded-xl border border-slate-300 bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-sm transition-all focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
+                  oninput="updateAttestationLabel()"
                 />
               </div>
               <div class="mb-3 sm:mb-4">
-                <label for="id_email" class="block text-sm font-bold text-slate-700 mb-2">School Email *</label>
+                <label for="id_email" class="block text-sm font-bold text-slate-700 mb-2">TISB email address *</label>
                 <input
                   type="email"
                   name="email"
                   id="id_email"
                   required
-                  pattern="^[a-zA-Z0-9._%+-]+@tisb\\.ac\\.in$"
+                  pattern="^[a-zA-Z0-9._%+-]+@tisb\.ac\.in$"
                   placeholder="yourname@tisb.ac.in"
                   class="w-full rounded-xl border border-slate-300 bg-white px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-sm transition-all focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                 />
-                <p class="mt-1 text-xs text-slate-500">
-                  Must end with @tisb.ac.in
-                </p>
+                <p class="mt-1 text-xs text-slate-500">Must end with @tisb.ac.in</p>
               </div>
-              <button type="submit" class="w-full rounded-xl sm:rounded-2xl bg-[#06B6D4] py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-white uppercase shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-600 touch-manipulation">
-                {% if item.claims.exists %}Still Claim Item{% else %}Claim Item{% endif %}
+              <div class="mb-4">
+                <label class="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" name="attestation" id="id_attestation" required class="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500" onchange="updateSubmitButton()">
+                  <span class="text-sm text-slate-700 leading-relaxed" id="attestation-label">
+                    I, <strong id="attestation-name">[enter your name above]</strong>, attest that this item is my personal property, that I am submitting this claim on my own behalf, and that I will collect this item in person from the school reception. I understand that submitting a false claim is a disciplinary matter.
+                  </span>
+                </label>
+              </div>
+              <button type="submit" id="claim-submit-btn" disabled class="w-full rounded-xl sm:rounded-2xl bg-[#06B6D4] py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-white uppercase shadow-lg shadow-cyan-500/20 transition-all hover:bg-cyan-600 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed">
+                Submit claim
               </button>
             </form>
             <div class="flex-1 flex flex-col">
@@ -354,6 +286,30 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- Claim Confirmation Modal (§3.1.3) -->
+<div id="claimConfirmModal" style="display:none;" class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50" onclick="if(event.target===this) closeClaimConfirmModal()">
+  <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-black text-slate-900 mb-3">Confirm your claim</h3>
+    <p class="text-sm text-slate-600 mb-3">You are about to submit a formal claim for the following item:</p>
+    <div class="bg-slate-50 rounded-xl p-3 mb-3 text-sm">
+      <p class="font-bold text-slate-900">{{ item.title }}</p>
+      <p class="text-slate-600">Found at: {{ item.location_found|default:"Unknown" }}</p>
+      <p class="text-slate-600">Found on: {{ item.date_found|date:"F d, Y" }}</p>
+    </div>
+    <div class="bg-slate-50 rounded-xl p-3 mb-3 text-sm">
+      <p class="text-slate-700">Name: <strong id="confirmName"></strong></p>
+      <p class="text-slate-700">Email: <strong id="confirmEmail"></strong></p>
+    </div>
+    <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+      By clicking "Confirm and submit", you are formally stating that this item belongs to you. A record of this claim, including your name, email, and the time of submission, will be stored and visible to TRACE staff.
+    </p>
+    <div class="flex justify-end gap-2">
+      <button type="button" onclick="closeClaimConfirmModal()" class="rounded-xl bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-300 transition">Cancel</button>
+      <button type="button" onclick="submitClaimForm()" class="rounded-xl bg-cyan-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:bg-cyan-700 active:scale-95">Confirm and submit</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -463,14 +419,72 @@ document.addEventListener('DOMContentLoaded', function() {
     if (totalImages > 0) {
         updateGallery();
     }
-    
+
     // Close mobile menu on window resize if it becomes desktop
     window.addEventListener('resize', function() {
         if (window.innerWidth >= 1280) {
             closeMobileMenu();
         }
     });
+
+    // Initialize attestation label and submit button state
+    updateAttestationLabel();
+    updateSubmitButton();
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeClaimConfirmModal();
+        }
+    });
 });
+
+// Claim form: dynamic attestation label
+function updateAttestationLabel() {
+    var nameInput = document.getElementById('id_name');
+    var nameSpan = document.getElementById('attestation-name');
+    if (!nameInput || !nameSpan) return;
+    var name = nameInput.value.trim();
+    if (name.length >= 2) {
+        nameSpan.textContent = name;
+    } else {
+        nameSpan.textContent = '[enter your name above]';
+    }
+    updateSubmitButton();
+}
+
+function updateSubmitButton() {
+    var nameInput = document.getElementById('id_name');
+    var checkbox = document.getElementById('id_attestation');
+    var btn = document.getElementById('claim-submit-btn');
+    if (!nameInput || !checkbox || !btn) return;
+    var nameValid = nameInput.value.trim().length >= 2;
+    btn.disabled = !(nameValid && checkbox.checked);
+}
+
+// Claim confirmation modal
+function openClaimConfirmModal(e) {
+    e.preventDefault();
+    var nameVal = document.getElementById('id_name').value.trim();
+    var emailVal = document.getElementById('id_email').value.trim();
+    document.getElementById('confirmName').textContent = nameVal;
+    document.getElementById('confirmEmail').textContent = emailVal;
+    document.getElementById('claimConfirmModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    return false;
+}
+
+function closeClaimConfirmModal() {
+    document.getElementById('claimConfirmModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function submitClaimForm() {
+    closeClaimConfirmModal();
+    // Submit without triggering the onsubmit handler again
+    var form = document.getElementById('claim-form');
+    form.onsubmit = null;
+    form.submit();
+}
 </script>
 </body>
 </html>

@@ -14,6 +14,8 @@ class ItemFormTests(TestCase):
                 "location_found": "Cafeteria",
                 "date_found": date.today(),
                 "status": "FOUND",
+                "category": "OTHER_MISC",
+                "item_type": "SENIOR",
             }
         )
         self.assertTrue(form.is_valid(), form.errors)

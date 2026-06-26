@@ -6,7 +6,7 @@ from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from PIL import Image
 
-from .models import ItemImage
+from .models import ItemImage, StudentLostItemImage
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ def is_heic_file(filename):
 
 
 @receiver(pre_save, sender=ItemImage)
+@receiver(pre_save, sender=StudentLostItemImage)
 def convert_heic_image(sender, instance, **kwargs):
     """
     Signal handler to convert HEIC/HEIF files to JPEG before saving.

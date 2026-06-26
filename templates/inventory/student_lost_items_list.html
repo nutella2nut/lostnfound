@@ -37,84 +37,11 @@
 
 <!-- SIDEBAR: The 7 Sections -->
 <div class="flex min-h-screen flex-nowrap">
-  <aside id="sidebar" class="fixed xl:static inset-y-0 left-0 z-50 xl:m-4 flex flex-col w-80 max-w-[85vw] rounded-[2.5rem] bg-[#0F172A] shadow-2xl transform -translate-x-full xl:translate-x-0 transition-transform duration-300">
-    <div class="p-6 md:p-10 pt-12 overflow-y-auto h-full">
-      <!-- Close button for mobile -->
-      <button onclick="closeMobileMenu()" class="xl:hidden absolute top-4 right-4 text-slate-400 hover:text-white">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-      <!-- LOGO -->
-      <a href="{% url 'inventory:item_list' %}" class="mb-10 flex items-center gap-4 px-2 select-none cursor-pointer hover:opacity-80 transition-opacity">
-        <!-- Icon -->
-        <div class="relative h-14 w-14">
-          <!-- Gradient Pin -->
-          <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500 shadow-xl"></div>
-          <!-- Magnifier Handle -->
-          <div class="absolute -bottom-1 -left-1 h-8 w-4 rotate-45 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
-          <!-- Robot Face -->
-          <div class="absolute inset-2 flex items-center justify-center rounded-full bg-[#0F172A]">
-            <svg viewBox="0 0 24 24" class="h-7 w-7 text-cyan-400" fill="currentColor">
-              <rect x="4" y="6" width="16" height="12" rx="4" />
-              <circle cx="9" cy="12" r="1.3" />
-              <circle cx="15" cy="12" r="1.3" />
-              <rect x="11" y="2" width="2" height="3" rx="1" />
-            </svg>
-          </div>
-        </div>
-        <!-- Text -->
-        <div class="leading-tight">
-          <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-3xl font-black tracking-tight text-transparent">Trace</h1>
-          <p class="text-xs font-bold tracking-widest text-slate-400 uppercase">Lost & Found • AI Powered</p>
-        </div>
-      </a>
-
-      <nav class="space-y-1">
-        <!-- Note: Student Lost Items don't have categories -->
-        <div class="px-4 py-2 mb-2">
-          <p class="text-xs font-bold tracking-widest text-slate-500 uppercase">No Categories</p>
-          <p class="text-xs text-slate-400 mt-1">Student items are not categorized</p>
-        </div>
-      </nav>
-    </div>
-  </aside>
+  {% include "inventory/_sidebar.html" %}
   
   <!-- MAIN AREA -->
   <main class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 w-full xl:w-auto">
-    <!-- Top Header: Auth Toggle Area -->
-    <header class="mb-4 md:mb-6 flex flex-col sm:flex-row justify-between xl:justify-end items-start sm:items-center gap-4 pt-12 xl:pt-0">
-      <div class="xl:hidden">
-        <a href="{% url 'inventory:item_list' %}" class="flex items-center gap-2">
-          <div class="relative h-10 w-10">
-            <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500"></div>
-            <div class="absolute -bottom-1 -left-1 h-6 w-3 rotate-45 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
-            <div class="absolute inset-2 flex items-center justify-center rounded-full bg-[#0F172A]">
-              <svg viewBox="0 0 24 24" class="h-5 w-5 text-cyan-400" fill="currentColor">
-                <rect x="4" y="6" width="16" height="12" rx="4" />
-                <circle cx="9" cy="12" r="1.3" />
-                <circle cx="15" cy="12" r="1.3" />
-                <rect x="11" y="2" width="2" height="3" rx="1" />
-              </svg>
-            </div>
-          </div>
-          <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-2xl font-black tracking-tight text-transparent">Trace</h1>
-        </a>
-      </div>
-      <div id="auth-button-container" class="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto xl:w-auto">
-        {% if user.is_authenticated and user.is_staff %}
-          <a href="{% url 'logout' %}" class="inline-block rounded-xl bg-red-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-95 text-center">Logout</a>
-          <a href="{% url 'inventory:item_upload' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Upload Item</a>
-          <a href="{% url 'inventory:admin_dashboard' %}" class="inline-block rounded-xl bg-cyan-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-700 active:scale-95 text-center">Admin Dashboard</a>
-          {% if is_super_user %}
-          <a href="{% url 'inventory:approval_queue' %}" class="inline-block rounded-xl bg-yellow-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-yellow-500/30 transition hover:bg-yellow-700 active:scale-95 text-center">Approval Queue</a>
-          <a href="/admin/" class="inline-block rounded-xl bg-indigo-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-700 active:scale-95 text-center">Django Admin</a>
-          {% endif %}
-        {% else %}
-          <a href="{% url 'login' %}" class="inline-block rounded-xl bg-purple-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-700 active:scale-95 text-center">Staff Login</a>
-        {% endif %}
-      </div>
-    </header>
+    {% include "inventory/_header.html" %}
 
     <!-- Main Page Navigation Tabs -->
     <div class="mb-6 md:mb-8">
@@ -167,13 +94,14 @@
     </div>
     
     <!-- Feed Header -->
-    <div class="mb-6 md:mb-8 flex items-end justify-between px-2">
+    <div class="mb-6 md:mb-8 flex flex-col sm:flex-row items-start sm:items-end justify-between px-2 gap-2">
       <div>
         <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0F172A] uppercase">Students' Lost Items</h2>
         <p class="mt-1 text-sm sm:text-base font-bold text-slate-500">
           Viewing approved student-submitted lost items
         </p>
       </div>
+      <a href="{% url 'inventory:how_to_report_lost' %}" class="text-sm font-bold text-cyan-600 hover:text-cyan-700 hover:underline transition">How to report a lost item</a>
     </div>
     
     <!-- Grid Layout -->
@@ -246,6 +174,13 @@
             <!-- Buttons -->
             <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <a href="{% url 'inventory:student_lost_item_detail' item.pk %}" class="flex-1 rounded-xl sm:rounded-2xl bg-slate-700 py-3 sm:py-4 md:py-5 text-center text-xs sm:text-sm font-black tracking-widest text-white uppercase shadow-lg transition-all hover:bg-slate-800">View Details</a>
+              {% if is_super_user %}
+              <a href="{% url 'inventory:broadcast_item' 'student_lost' item.pk %}"
+                 class="inline-flex items-center justify-center gap-1.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-cyan-500 to-purple-500 py-3 sm:py-4 md:py-5 px-4 text-xs sm:text-sm font-bold text-white shadow-lg transition hover:shadow-xl hover:brightness-110 active:scale-95">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                Broadcast
+              </a>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -270,8 +205,12 @@
     
     {% else %}
     <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white p-6 sm:p-12 text-center shadow-lg">
-      <p class="text-lg sm:text-xl font-bold text-slate-500">No items found matching your criteria.</p>
-      <a href="{% url 'inventory:item_list' %}" class="mt-4 inline-block rounded-xl bg-cyan-500 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-cyan-600">View All Items</a>
+      {% if search_query %}
+      <p class="text-lg sm:text-xl font-bold text-slate-500">No items found matching your search.</p>
+      {% else %}
+      <p class="text-lg sm:text-xl font-bold text-slate-500">No student-submitted lost item reports are currently approved for display.</p>
+      {% endif %}
+      <a href="{% url 'inventory:student_lost_items_list' %}" class="mt-4 inline-block rounded-xl bg-cyan-500 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-cyan-600">View All</a>
     </div>
     {% endif %}
   </main>

@@ -1,0 +1,85 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Role Change History - TRACE Lost & Found</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        html, body { overflow-x: hidden; max-width: 100vw; }
+        .mobile-menu-overlay { display: none; }
+        .mobile-menu-overlay.active { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900">
+<button id="mobile-menu-btn" class="xl:hidden fixed top-4 left-4 z-50 bg-[#0F172A] text-white p-3 rounded-xl shadow-lg">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+</button>
+<div id="mobile-menu-overlay" class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+<div class="flex min-h-screen flex-nowrap">
+  {% include "inventory/_sidebar.html" with sidebar_active="user_management" %}
+  <main class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 w-full xl:w-auto">
+    {% include "inventory/_header.html" %}
+    <div class="mb-6">
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Role Change History</h1>
+      <p class="text-slate-500 text-sm">Audit log of all user role changes.</p>
+    </div>
+    <div class="mb-4 flex gap-2 flex-wrap">
+      <a href="{% url 'inventory:user_role_change_history' %}" class="rounded-full px-3 py-1 text-xs font-bold {% if not request.GET.action %}bg-cyan-500 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">All</a>
+      {% for code, label in action_choices %}
+      <a href="?action={{ code }}" class="rounded-full px-3 py-1 text-xs font-bold {% if request.GET.action == code %}bg-cyan-500 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+    <div class="rounded-2xl border border-slate-100 bg-white shadow-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Timestamp</th>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Action</th>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Target User</th>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Performed By</th>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Details</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for change in changes %}
+            <tr class="hover:bg-slate-50">
+              <td class="px-4 py-3 text-sm text-slate-700">{{ change.created_at|date:"M d, Y H:i" }}</td>
+              <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-bold
+                {% if 'PROMOTE' in change.action %}bg-green-100 text-green-800
+                {% elif 'DEMOTE' in change.action or change.action == 'REVOKE_STAFF' %}bg-amber-100 text-amber-800
+                {% elif change.action == 'DELETE' or change.action == 'DEACTIVATE' %}bg-red-100 text-red-800
+                {% else %}bg-slate-100 text-slate-700{% endif %}">{{ change.get_action_display }}</span></td>
+              <td class="px-4 py-3 text-sm text-slate-700">
+                {% if change.target_user %}<a href="{% url 'inventory:user_management_detail' change.target_user.pk %}" class="text-cyan-600 hover:underline">{{ change.target_username_snapshot }}</a>{% else %}{{ change.target_username_snapshot }} <span class="text-slate-400">(deleted)</span>{% endif %}
+              </td>
+              <td class="px-4 py-3 text-sm text-slate-700">{{ change.performed_by_username_snapshot|default:"System" }}</td>
+              <td class="px-4 py-3 text-sm text-slate-500 max-w-xs truncate">{{ change.details|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">No role changes recorded.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="mt-8 flex justify-center gap-3">
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if request.GET.action %}&action={{ request.GET.action }}{% endif %}" class="rounded-xl bg-white px-6 py-3 font-bold text-slate-700 shadow-lg hover:bg-slate-50">&larr; Previous</a>{% endif %}
+      <span class="rounded-xl bg-cyan-500 px-6 py-3 font-bold text-white shadow-lg">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if request.GET.action %}&action={{ request.GET.action }}{% endif %}" class="rounded-xl bg-white px-6 py-3 font-bold text-slate-700 shadow-lg hover:bg-slate-50">Next &rarr;</a>{% endif %}
+    </div>
+    {% endif %}
+  </main>
+</div>
+<script>
+function openMobileMenu() { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('mobile-menu-overlay').classList.add('active'); }
+function closeMobileMenu() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobile-menu-overlay').classList.remove('active'); }
+document.getElementById('mobile-menu-btn').addEventListener('click', openMobileMenu);
+</script>
+</body>
+</html>

@@ -8,10 +8,12 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 HAS_WHITENOISE = importlib.util.find_spec("whitenoise") is not None
 
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "dev-secret-key-change-me",
-)
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if os.environ.get("DJANGO_DEBUG", "1") == "1":
+        SECRET_KEY = "dev-secret-key-DO-NOT-USE-IN-PRODUCTION"
+    else:
+        raise RuntimeError("DJANGO_SECRET_KEY must be set in production.")
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
@@ -187,22 +189,75 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 if HAS_WHITENOISE:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# Media storage (§5)
+MEDIA_BACKEND = os.environ.get("MEDIA_BACKEND", "local").lower()
+
+if MEDIA_BACKEND == "s3":
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+    AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+    AWS_STORAGE_BUCKET_NAME = os.environ["AWS_STORAGE_BUCKET_NAME"]
+    AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL")
+    AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "auto")
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN")
+    AWS_S3_ADDRESSING_STYLE = "virtual"
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    AWS_DEFAULT_ACL = None
+    AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "public, max-age=31536000, immutable"}
+    AWS_QUERYSTRING_AUTH = False
+else:
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 #
-# Outgoing email configuration (SMTP)
-# Uses environment variables so it works locally and on Railway.
+# Microsoft 365 OAuth2 configuration (§1.9)
 #
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "noreply@example.com")
+MS_OAUTH_TENANT_ID = os.environ.get("MS_OAUTH_TENANT_ID", "")
+MS_OAUTH_CLIENT_ID = os.environ.get("MS_OAUTH_CLIENT_ID", "")
+MS_OAUTH_CLIENT_SECRET = os.environ.get("MS_OAUTH_CLIENT_SECRET", "")
+MS_OAUTH_SCOPES = os.environ.get(
+    "MS_OAUTH_SCOPES",
+    "https://outlook.office.com/IMAP.AccessAsUser.All https://outlook.office.com/SMTP.Send offline_access",
+)
+MS_OAUTH_REDIRECT_URI = os.environ.get("MS_OAUTH_REDIRECT_URI", "http://localhost:8765/oauth/callback")
+MS_OAUTH_AUTHORITY = os.environ.get(
+    "MS_OAUTH_AUTHORITY",
+    f"https://login.microsoftonline.com/{MS_OAUTH_TENANT_ID}" if MS_OAUTH_TENANT_ID else "https://login.microsoftonline.com/common",
+)
+MS_OAUTH_TOKEN_ENCRYPTION_KEY = os.environ.get("MS_OAUTH_TOKEN_ENCRYPTION_KEY", "")
+
+#
+# Outgoing email configuration (SMTP)
+# Uses OAuth2 XOAUTH2 when MS_OAUTH_CLIENT_ID is set, falls back to basic auth otherwise.
+# Set EMAIL_BACKEND env var to override auto-detection.
+#
+if MS_OAUTH_CLIENT_ID:
+    EMAIL_BACKEND = "inventory.email_backends.MicrosoftOAuth2EmailBackend"
+    EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp-mail.outlook.com")
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+    EMAIL_USE_TLS = True
+    EMAIL_USE_SSL = False
+    EMAIL_HOST_USER = os.environ.get("LF_EMAIL_ADDRESS", "")
+    EMAIL_HOST_PASSWORD = ""  # Unused with XOAUTH2
+elif os.environ.get("EMAIL_HOST"):
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = os.environ.get("EMAIL_HOST")
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+else:
+    raise RuntimeError(
+        "Email is not configured. Set EMAIL_HOST (for SMTP) or MS_OAUTH_CLIENT_ID (for OAuth2). "
+        "The console email backend has been removed to prevent silent failures."
+    )
+
+_default_from = os.environ.get("DEFAULT_FROM_EMAIL", os.environ.get("LF_EMAIL_ADDRESS", ""))
+if not _default_from:
+    raise RuntimeError("DEFAULT_FROM_EMAIL or LF_EMAIL_ADDRESS must be set.")
+DEFAULT_FROM_EMAIL = _default_from
 
 #
 # Incoming email (IMAP) configuration for student submissions
@@ -210,10 +265,21 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "no
 #
 LF_EMAIL_ADDRESS = os.environ.get("LF_EMAIL_ADDRESS", "")
 LF_EMAIL_PASSWORD = os.environ.get("LF_EMAIL_PASSWORD", "")
-LF_IMAP_HOST = os.environ.get("LF_IMAP_HOST", "")
+LF_IMAP_HOST = os.environ.get("LF_IMAP_HOST", "outlook.office365.com")
 LF_IMAP_PORT = int(os.environ.get("LF_IMAP_PORT", "993"))
 LF_IMAP_MAILBOX = os.environ.get("LF_IMAP_MAILBOX", "INBOX")
 LF_ALLOWED_SENDER_DOMAIN = os.environ.get("LF_ALLOWED_SENDER_DOMAIN", "@tisb.ac.in")
+LF_EMAIL_DISPLAY_NAME = os.environ.get("LF_EMAIL_DISPLAY_NAME", "TRACE Lost & Found")
+
+# Broadcast recipients (§2.2)
+_broadcast_raw = os.environ.get("LF_BROADCAST_RECIPIENTS", "raadvait@tisb.ac.in,nsiddharth@tisb.ac.in")
+LF_BROADCAST_RECIPIENTS_LIST = list(dict.fromkeys(
+    addr.strip().lower() for addr in _broadcast_raw.split(",") if addr.strip()
+))
+
+# Magic link configuration (§4.2)
+MAGIC_LINK_SECRET = os.environ.get("MAGIC_LINK_SECRET", "")
+MAGIC_LINK_BASE_URL = os.environ.get("MAGIC_LINK_BASE_URL", "")
 
 # Google Gemini API Key (currently in use for AI features)
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
@@ -242,12 +308,11 @@ LOGGING = {
     "loggers": {
         "inventory": {
             "handlers": ["console"],
-            "level": "WARNING",
+            "level": "INFO",
         },
     },
 }
 
-import os
 from django.contrib.auth import get_user_model
 
 if os.environ.get("CREATE_SUPERUSER") == "true":

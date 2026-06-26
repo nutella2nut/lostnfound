@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Broadcast History - Trace Lost & Found</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        html, body { overflow-x: hidden; max-width: 100vw; }
+        .mobile-menu-overlay {
+            display: none;
+        }
+        .mobile-menu-overlay.active {
+            display: block;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+        }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900">
+<!-- Mobile Menu Button -->
+<button id="mobile-menu-btn" class="xl:hidden fixed top-4 left-4 z-50 bg-[#0F172A] text-white p-3 rounded-xl shadow-lg">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+    </svg>
+</button>
+
+<!-- Mobile Menu Overlay -->
+<div id="mobile-menu-overlay" class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+
+<!-- SIDEBAR -->
+<div class="flex min-h-screen flex-nowrap">
+  {% include "inventory/_sidebar.html" with sidebar_active="approval" %}
+
+  <!-- MAIN AREA -->
+  <main class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 w-full xl:w-auto">
+    {% include "inventory/_header.html" %}
+
+    <!-- Page Title -->
+    <div class="mb-6 md:mb-8">
+      <h1 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#0F172A] mb-2 uppercase">Broadcast History</h1>
+      <p class="text-sm sm:text-base text-slate-500 font-medium">
+        Log of all broadcast emails sent to the school
+      </p>
+    </div>
+
+    <!-- Filter Links -->
+    <div class="mb-6 flex flex-wrap gap-2">
+      <a href="{% url 'inventory:broadcast_history' %}"
+         class="rounded-xl px-4 py-2 text-sm font-bold transition {% if not request.GET.kind %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}bg-white text-slate-700 shadow hover:bg-slate-50{% endif %}">
+        All
+      </a>
+      <a href="{% url 'inventory:broadcast_history' %}?kind=STUDENT_LOST"
+         class="rounded-xl px-4 py-2 text-sm font-bold transition {% if request.GET.kind == 'STUDENT_LOST' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}bg-white text-slate-700 shadow hover:bg-slate-50{% endif %}">
+        Student Lost
+      </a>
+      <a href="{% url 'inventory:broadcast_history' %}?kind=FOUND_ITEM"
+         class="rounded-xl px-4 py-2 text-sm font-bold transition {% if request.GET.kind == 'FOUND_ITEM' %}bg-cyan-500 text-white shadow-lg shadow-cyan-500/20{% else %}bg-white text-slate-700 shadow hover:bg-slate-50{% endif %}">
+        Found Item
+      </a>
+    </div>
+
+    <!-- Broadcasts Table -->
+    {% if broadcasts %}
+    <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white shadow-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Sent At</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Kind</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Item</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Sent By</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Recipients</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Status</th>
+              <th class="px-4 py-3 text-left text-xs sm:text-sm font-black text-slate-700 uppercase tracking-wider">Error</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for broadcast in broadcasts %}
+            <tr class="bg-white hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-3 text-xs sm:text-sm text-slate-700 whitespace-nowrap">{{ broadcast.sent_at|date:"M d, Y H:i" }}</td>
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-bold {% if broadcast.kind == 'STUDENT_LOST' %}bg-blue-100 text-blue-800{% else %}bg-purple-100 text-purple-800{% endif %}">
+                  {{ broadcast.get_kind_display }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-xs sm:text-sm font-medium text-slate-900">
+                {% if broadcast.kind == 'STUDENT_LOST' and broadcast.student_lost_item %}
+                  <a href="{% url 'inventory:student_lost_item_detail' broadcast.student_lost_item.pk %}" class="text-cyan-600 hover:text-cyan-800 hover:underline">
+                    {{ broadcast.student_lost_item.title }}
+                  </a>
+                {% elif broadcast.kind == 'FOUND_ITEM' and broadcast.found_item %}
+                  <a href="{% url 'inventory:item_detail' broadcast.found_item.pk %}" class="text-cyan-600 hover:text-cyan-800 hover:underline">
+                    {{ broadcast.found_item.title }}
+                  </a>
+                {% else %}
+                  <span class="text-slate-400">Item deleted</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-xs sm:text-sm text-slate-700">{{ broadcast.sent_by.username|default:"Unknown" }}</td>
+              <td class="px-4 py-3 text-xs sm:text-sm text-slate-700 max-w-[200px]">
+                <span class="truncate block" title="{{ broadcast.recipients }}">{{ broadcast.recipients|truncatechars:60 }}</span>
+              </td>
+              <td class="px-4 py-3">
+                {% if broadcast.succeeded %}
+                  <span class="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">Sent</span>
+                {% else %}
+                  <span class="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">Failed</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-xs text-red-600 max-w-[200px]">
+                {% if broadcast.error_message %}
+                  <span class="truncate block" title="{{ broadcast.error_message }}">{{ broadcast.error_message|truncatechars:80 }}</span>
+                {% else %}
+                  <span class="text-slate-300">--</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="mt-8 sm:mt-12 flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
+      {% if page_obj.has_previous %}
+        <a href="?{% if request.GET.kind %}kind={{ request.GET.kind }}&{% endif %}page={{ page_obj.previous_page_number }}" class="rounded-xl bg-white px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-slate-700 shadow-lg transition hover:bg-slate-50 w-full sm:w-auto text-center">&larr; Previous</a>
+      {% endif %}
+      <span class="flex items-center rounded-xl bg-cyan-500 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      </span>
+      {% if page_obj.has_next %}
+        <a href="?{% if request.GET.kind %}kind={{ request.GET.kind }}&{% endif %}page={{ page_obj.next_page_number }}" class="rounded-xl bg-white px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-slate-700 shadow-lg transition hover:bg-slate-50 w-full sm:w-auto text-center">Next &rarr;</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white p-6 sm:p-12 text-center shadow-lg">
+      <p class="text-lg sm:text-xl font-bold text-slate-500">No broadcasts found.</p>
+    </div>
+    {% endif %}
+  </main>
+</div>
+
+<script>
+function openMobileMenu() { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('mobile-menu-overlay').classList.add('active'); }
+function closeMobileMenu() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobile-menu-overlay').classList.remove('active'); }
+document.getElementById('mobile-menu-btn').addEventListener('click', openMobileMenu);
+</script>
+</body>
+</html>

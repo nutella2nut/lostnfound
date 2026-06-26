@@ -68,22 +68,18 @@ class StaffUploadViewsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login/", response["Location"])
 
-    @patch("inventory.views.analyze_item_images")
-    def test_upload_flow_with_vision_suggestions(self, mock_analyze):
-        mock_analyze.return_value = {
-            "title": "Suggested Title",
-            "description": "Suggested description from vision service.",
-        }
-
+    def test_upload_saves_item_and_redirects(self):
         self.client.login(username="staff", password="pw")
         image = _create_test_image()
 
         post_data = {
-            "title": "",
-            "description": "",
+            "title": "Black Umbrella",
+            "description": "Compact umbrella.",
             "location_found": "Lobby",
             "date_found": date.today(),
             "status": Item.Status.FOUND,
+            "category": "OTHER_MISC",
+            "item_type": "SENIOR",
             "images-TOTAL_FORMS": "1",
             "images-INITIAL_FORMS": "0",
             "images-MIN_NUM_FORMS": "0",
@@ -95,39 +91,13 @@ class StaffUploadViewsTests(TestCase):
             data={**post_data, "images-0-image": image},
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "inventory/item_upload_confirm.html")
-        # Auto-filled values should appear in the confirmation form.
-        self.assertContains(response, "Suggested Title")
-        self.assertContains(response, "Suggested description from vision service.")
-
-    def test_confirm_view_saves_item_and_images(self):
-        self.client.login(username="staff", password="pw")
-        image = _create_test_image()
-
-        post_data = {
-            "title": "Black Umbrella",
-            "description": "Compact umbrella.",
-            "location_found": "Lobby",
-            "date_found": date.today(),
-            "status": Item.Status.FOUND,
-            "images-TOTAL_FORMS": "1",
-            "images-INITIAL_FORMS": "0",
-            "images-MIN_NUM_FORMS": "0",
-            "images-MAX_NUM_FORMS": "3",
-        }
-
-        response = self.client.post(
-            reverse("inventory:item_upload_confirm"),
-            data={**post_data, "images-0-image": image},
-        )
-
-        # Should redirect to the Django admin change page for the new item.
+        # Should redirect to browse page after successful upload.
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/inventory/item/", response["Location"])
+        self.assertIn("/browse/", response["Location"])
 
         item = Item.objects.get(title="Black Umbrella")
         self.assertEqual(item.created_by, self.staff)
+        self.assertEqual(item.approval_status, "PENDING")
         self.assertEqual(ItemImage.objects.filter(item=item).count(), 1)
 
 

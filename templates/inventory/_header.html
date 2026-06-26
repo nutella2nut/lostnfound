@@ -1,0 +1,132 @@
+{% comment %}
+Header partial with hamburger dropdown for staff/superusers, or Staff Login button for unauthenticated users.
+Include with: {% include "inventory/_header.html" %}
+
+Requires the following in the template context (provided by context processors or views):
+  - user (Django auth user)
+  - is_super_user (boolean)
+
+CSS and JS for the dropdown are self-contained in this partial.
+{% endcomment %}
+<header class="mb-4 md:mb-6 flex flex-col sm:flex-row justify-between xl:justify-end items-start sm:items-center gap-4 pt-12 xl:pt-0">
+  <!-- Mobile logo (hidden on desktop where sidebar is visible) -->
+  <div class="xl:hidden">
+    <a href="{% url 'inventory:item_list' %}" class="flex items-center gap-2">
+      <div class="relative h-10 w-10">
+        <div class="absolute inset-0 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-purple-500"></div>
+        <div class="absolute -bottom-1 -left-1 h-6 w-3 rotate-45 rounded-full bg-gradient-to-br from-purple-400 to-purple-600"></div>
+        <div class="absolute inset-2 flex items-center justify-center rounded-full bg-[#0F172A]">
+          <svg viewBox="0 0 24 24" class="h-5 w-5 text-cyan-400" fill="currentColor">
+            <rect x="4" y="6" width="16" height="12" rx="4" />
+            <circle cx="9" cy="12" r="1.3" />
+            <circle cx="15" cy="12" r="1.3" />
+            <rect x="11" y="2" width="2" height="3" rx="1" />
+          </svg>
+        </div>
+      </div>
+      <h1 class="bg-gradient-to-r from-teal-300 to-purple-400 bg-clip-text text-2xl font-black tracking-tight text-transparent">Trace</h1>
+    </a>
+  </div>
+
+  {% if user.is_authenticated and user.is_staff %}
+  <!-- Hamburger dropdown for staff -->
+  <div class="relative" id="nav-dropdown-wrapper">
+    <button id="nav-dropdown-btn" onclick="toggleNavDropdown()" class="rounded-xl bg-[#0F172A] p-3 text-white shadow-lg transition hover:bg-[#1e293b] active:scale-95">
+      <div class="w-6 h-6 relative">
+        <span class="nav-hamburger-line absolute left-0 w-full h-0.5 bg-current rounded-full transition-all duration-300 top-[5px]"></span>
+        <span class="nav-hamburger-line absolute left-0 w-full h-0.5 bg-current rounded-full transition-all duration-300 top-[11px]"></span>
+        <span class="nav-hamburger-line absolute left-0 w-full h-0.5 bg-current rounded-full transition-all duration-300 top-[17px]"></span>
+      </div>
+    </button>
+    <div id="nav-dropdown-menu" class="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[#0F172A] shadow-2xl border border-slate-700 z-50 overflow-hidden transition-all duration-200 origin-top-right scale-95 opacity-0 pointer-events-none">
+      <nav class="py-2">
+        <!-- Staff Tools -->
+        <div class="px-4 py-2">
+          <p class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Staff Tools</p>
+        </div>
+        <a href="{% url 'inventory:item_upload' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          Upload Item
+        </a>
+        <a href="{% url 'inventory:admin_dashboard' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          Admin Dashboard
+        </a>
+        {% if is_super_user %}
+        <!-- Super User Tools -->
+        <div class="border-t border-slate-700 mt-2 pt-2 px-4 py-2">
+          <p class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">Super User</p>
+        </div>
+        <a href="{% url 'inventory:approval_queue' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+          Approval Queue
+        </a>
+        <a href="{% url 'inventory:user_management_list' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          Manage Users
+        </a>
+        <a href="{% url 'inventory:broadcast_history' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+          Broadcast History
+        </a>
+        <a href="/admin/" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          Django Admin
+        </a>
+        {% endif %}
+        <!-- Logout -->
+        <div class="border-t border-slate-700 mt-2 pt-2">
+          <a href="{% url 'logout' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            Logout
+          </a>
+        </div>
+      </nav>
+    </div>
+  </div>
+  {% else %}
+  <!-- Staff Login button for unauthenticated users -->
+  <a href="{% url 'login' %}" class="inline-block rounded-xl bg-[#0F172A] px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-bold text-white shadow-lg transition hover:bg-[#1e293b] active:scale-95 text-center">Staff Login</a>
+  {% endif %}
+</header>
+
+<script>
+function toggleNavDropdown() {
+    var menu = document.getElementById('nav-dropdown-menu');
+    var btn = document.getElementById('nav-dropdown-btn');
+    if (!menu || !btn) return;
+    var isOpen = !menu.classList.contains('pointer-events-none');
+    if (isOpen) {
+        closeNavDropdown();
+    } else {
+        menu.classList.remove('scale-95', 'opacity-0', 'pointer-events-none');
+        menu.classList.add('scale-100', 'opacity-100');
+        btn.classList.add('nav-hamburger-open');
+    }
+}
+function closeNavDropdown() {
+    var menu = document.getElementById('nav-dropdown-menu');
+    var btn = document.getElementById('nav-dropdown-btn');
+    if (!menu) return;
+    menu.classList.remove('scale-100', 'opacity-100');
+    menu.classList.add('scale-95', 'opacity-0', 'pointer-events-none');
+    if (btn) btn.classList.remove('nav-hamburger-open');
+}
+document.addEventListener('click', function(e) {
+    var wrapper = document.getElementById('nav-dropdown-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+        closeNavDropdown();
+    }
+});
+</script>
+<style>
+.nav-hamburger-open .nav-hamburger-line:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+}
+.nav-hamburger-open .nav-hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+.nav-hamburger-open .nav-hamburger-line:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+}
+</style>
