@@ -25,8 +25,18 @@ staticfiles/
 *.swo
 *~
 
-# Automation state
-automation/state/
+# Automation / Discord / Agent files
+automation/
+CLAUDE.md
+IMPLEMENTER_AGENT.md
+TECH_LEAD_REVIEWER.md
+SESSION_HANDOFF.md
+PROJECT_PROGRESS.md
+PROJECT_CONTEXT.md
+DECISIONS.md
+WORDING_AUDIT.md
+MANUAL_TESTS.md
+startup-prompt.md
 
 # Environment
 .env
