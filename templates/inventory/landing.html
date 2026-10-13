@@ -13,6 +13,7 @@
     </style>
 </head>
 <body class="bg-slate-50">
+    {% if site.announcement_enabled and site.announcement_text %}<div class="px-4 pt-4 max-w-4xl mx-auto">{% include "inventory/_announcement.html" %}</div>{% endif %}
     <!-- Hero Section -->
     <div class="relative min-h-screen flex items-center justify-center overflow-hidden">
         <!-- Background Image with Overlay -->
@@ -173,7 +174,7 @@
 
     <!-- Footer Disclaimer -->
     <footer class="py-6 px-4 sm:px-6 bg-slate-900 text-center">
-      <p class="text-xs text-slate-500 leading-relaxed">TRACE is operated by TISB. All claims and reports are logged. Misuse will be referred to the relevant Head of Year.</p>
+      <p class="text-xs text-slate-500 leading-relaxed">{{ site.misuse_disclaimer }}</p>
     </footer>
 </body>
 </html>

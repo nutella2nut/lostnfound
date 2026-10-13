@@ -93,3 +93,33 @@ def convert_heic_image(sender, instance, **kwargs):
         logger.error(f"Error converting HEIC to JPEG: {e}", exc_info=True)
         # Don't raise - allow the original file to be saved if conversion fails
 
+
+
+# ---------------------------------------------------------------------------
+# Forensic login logging
+# ---------------------------------------------------------------------------
+
+from django.contrib.auth.signals import user_logged_in, user_logged_out, user_login_failed  # noqa: E402
+
+from .audit import record_access  # noqa: E402
+
+
+@receiver(user_logged_in)
+def log_login(sender, request, user, **kwargs):
+    record_access(request, "LOGIN", actor=user)
+
+
+@receiver(user_login_failed)
+def log_login_failed(sender, credentials, request=None, **kwargs):
+    # Django masks the password in `credentials`; keep only the username tried.
+    record_access(
+        request, "LOGIN_FAILED",
+        details={"attempted_username": str(credentials.get("username", ""))[:150]},
+    )
+
+
+@receiver(user_logged_out)
+def log_logout(sender, request, user, **kwargs):
+    # user is None if the session had already expired.
+    if user is not None:
+        record_access(request, "LOGOUT", actor=user)

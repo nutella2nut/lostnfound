@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Audit Logs - TRACE Lost & Found</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        html, body { overflow-x: hidden; max-width: 100vw; }
+        .mobile-menu-overlay { display: none; }
+        .mobile-menu-overlay.active { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900">
+<button id="mobile-menu-btn" class="xl:hidden fixed top-4 left-4 z-50 bg-[#0F172A] text-white p-3 rounded-xl shadow-lg">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+</button>
+<div id="mobile-menu-overlay" class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+<div class="flex min-h-screen flex-nowrap">
+  {% include "inventory/_sidebar.html" %}
+  <main class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 w-full xl:w-auto">
+    {% include "inventory/_header.html" %}
+    <div class="mb-6">
+      <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mb-2">Audit Logs</h1>
+      <p class="text-slate-500 text-sm">Every page visit, form submission, sign-in/out, claim, upload, approval and deletion, with IP and device metadata. Device details marked "client-reported" come from the user's browser and can be forged. Records are kept for 12 months.</p>
+    </div>
+
+    <form method="get" class="mb-4 flex gap-2 flex-wrap items-center">
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search name, email, user, IP, item, page…"
+             class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm shadow-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 w-full sm:w-72">
+      {% if current_action %}<input type="hidden" name="action" value="{{ current_action }}">{% endif %}
+      <button type="submit" class="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-bold text-white shadow hover:bg-cyan-600">Search</button>
+    </form>
+
+    <div class="mb-4 flex gap-2 flex-wrap">
+      <a href="{% url 'inventory:access_audit_log' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}" class="rounded-full px-3 py-1 text-xs font-bold {% if not current_action %}bg-cyan-500 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">All</a>
+      <a href="?action=EVENTS{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="rounded-full px-3 py-1 text-xs font-bold {% if current_action == 'EVENTS' %}bg-cyan-500 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">Events only (no page visits)</a>
+      {% for code, label in action_choices %}
+      <a href="?action={{ code }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="rounded-full px-3 py-1 text-xs font-bold {% if current_action == code %}bg-cyan-500 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="rounded-2xl border border-slate-100 bg-white shadow-lg overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Timestamp</th>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Action</th>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Person</th>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Item / Page</th>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">IP Address</th>
+              <th class="px-4 py-3 text-left text-xs font-black text-slate-700 uppercase">Device</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for log in logs %}
+            <tr class="hover:bg-slate-50 align-top">
+              <td class="px-4 py-3 text-sm text-slate-700 whitespace-nowrap">{{ log.created_at|date:"M d, Y H:i" }}</td>
+              <td class="px-4 py-3"><span class="inline-flex rounded-full px-2 py-0.5 text-xs font-bold {% if log.action == 'PAGE_VIEW' or log.action == 'FORM_SUBMIT' %}bg-slate-100 text-slate-600{% elif log.action == 'CLAIM_FAILED' or log.action == 'LOGIN_FAILED' or log.action == 'ITEM_DELETE' %}bg-red-100 text-red-800{% elif log.action == 'CLAIM' %}bg-amber-100 text-amber-800{% else %}bg-cyan-100 text-cyan-800{% endif %}">{{ log.get_action_display }}</span></td>
+              <td class="px-4 py-3 text-sm text-slate-700">
+                {% if log.subject_name or log.subject_email %}
+                  <div class="font-medium">{{ log.subject_name|default:"—" }}</div>
+                  <div class="text-xs text-slate-500">{{ log.subject_email }}</div>
+                {% endif %}
+                {% if log.actor_username_snapshot %}
+                  <div class="{% if log.subject_name or log.subject_email %}text-xs text-slate-500{% else %}font-medium{% endif %}">user: {{ log.actor_username_snapshot }}</div>
+                {% elif not log.subject_name and not log.subject_email %}
+                  <div class="text-slate-400">anonymous</div>
+                {% endif %}
+                {% if log.details.attempted_username %}<div class="text-xs text-red-600">tried: {{ log.details.attempted_username }}</div>{% endif %}
+              </td>
+              <td class="px-4 py-3 text-sm text-slate-700">
+                {% if log.item %}<a href="{% url 'inventory:item_detail' log.item.pk %}" class="text-cyan-600 hover:underline">{{ log.item.title }}</a>
+                {% elif log.student_item %}<a href="{% url 'inventory:student_lost_item_detail' log.student_item.pk %}" class="text-cyan-600 hover:underline">{{ log.student_item.title }}</a>
+                {% elif log.item_title_snapshot %}{{ log.item_title_snapshot }} <span class="text-slate-400">(deleted)</span>{% endif %}
+                {% if log.request_path %}<div class="text-xs font-mono text-slate-500 break-all">{{ log.request_method }} {{ log.request_path }}{% if log.details.status_code %} → {{ log.details.status_code }}{% endif %}</div>{% endif %}
+              </td>
+              <td class="px-4 py-3 text-sm font-mono text-slate-700 whitespace-nowrap">{{ log.ip_address|default:"unknown" }}</td>
+              <td class="px-4 py-3 text-sm text-slate-500 max-w-xs">
+                <details>
+                  <summary class="cursor-pointer text-cyan-600 hover:underline text-xs">View details</summary>
+                  <div class="mt-2 text-xs space-y-1">
+                    <div><span class="font-bold">User agent:</span> {{ log.user_agent|default:"—" }}</div>
+                    <div><span class="font-bold">Language:</span> {{ log.accept_language|default:"—" }}</div>
+                    <div><span class="font-bold">Referer:</span> {{ log.referer|default:"—" }}</div>
+                    <div><span class="font-bold">X-Forwarded-For:</span> {{ log.forwarded_for|default:"—" }}</div>
+                    <div><span class="font-bold">Path:</span> {{ log.request_method }} {{ log.request_path }}</div>
+                    {% if log.details %}<div class="font-bold mt-1">Details:</div>
+                    <pre class="bg-slate-50 rounded p-2 overflow-x-auto whitespace-pre-wrap">{{ log.details|pprint }}</pre>{% endif %}
+                    <div class="font-bold mt-1">Client metadata (client-reported):</div>
+                    <pre class="bg-slate-50 rounded p-2 overflow-x-auto whitespace-pre-wrap">{{ log.client_metadata|pprint }}</pre>
+                  </div>
+                </details>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">No audit records found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="mt-8 flex justify-center gap-3">
+      {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if current_action %}&action={{ current_action }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="rounded-xl bg-white px-6 py-3 font-bold text-slate-700 shadow-lg hover:bg-slate-50">&larr; Previous</a>{% endif %}
+      <span class="rounded-xl bg-cyan-500 px-6 py-3 font-bold text-white shadow-lg">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if current_action %}&action={{ current_action }}{% endif %}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="rounded-xl bg-white px-6 py-3 font-bold text-slate-700 shadow-lg hover:bg-slate-50">Next &rarr;</a>{% endif %}
+    </div>
+    {% endif %}
+  </main>
+</div>
+<script>
+function openMobileMenu() { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('mobile-menu-overlay').classList.add('active'); }
+function closeMobileMenu() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobile-menu-overlay').classList.remove('active'); }
+document.getElementById('mobile-menu-btn').addEventListener('click', openMobileMenu);
+</script>
+</body>
+</html>

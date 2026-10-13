@@ -177,10 +177,15 @@ class WordingAuditTest(TestCase):
                     continue
                 rel = str(html_file.relative_to(BASE_DIR))
                 text = html_file.read_text(encoding="utf-8", errors="replace")
+                # A child template inherits its parent's footer.
+                parent = re.search(r'{%\s*extends\s+"([^"]+)"', text)
+                if parent:
+                    text += (BASE_DIR / "templates" / parent.group(1)).read_text(encoding="utf-8")
                 # Footer may be in the template directly or via the included
                 # sidebar partial (_sidebar.html)
                 has_footer = (
                     footer_text in text
+                    or "site.misuse_disclaimer" in text  # editable in Settings → Notices
                     or 'include "inventory/_sidebar.html"' in text
                 )
                 if not has_footer:

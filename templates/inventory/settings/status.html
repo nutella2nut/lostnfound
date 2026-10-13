@@ -1,0 +1,33 @@
+{% extends "inventory/settings/base.html" %}
+{% block title %}System status · Settings{% endblock %}
+{% block settings_content %}
+<div class="max-w-3xl space-y-6">
+  <div class="rounded-2xl border border-slate-100 bg-white shadow-lg p-5 sm:p-8">
+    <h2 class="text-xl font-black text-slate-900">System status</h2>
+    <p class="text-sm text-slate-500 mb-6">Read-only. These come from the server's environment variables and are changed in the hosting dashboard (Railway), not here. Passwords and keys are never shown.</p>
+    <dl class="divide-y divide-slate-100 text-sm">
+      {% for label, value, is_set in checks %}
+      <div class="flex flex-col sm:flex-row sm:justify-between gap-1 py-2.5">
+        <dt class="font-medium text-slate-600">{{ label }}</dt>
+        <dd class="font-bold text-slate-900 break-all">
+          {% if value is not None %}{{ value }}{% elif is_set %}<span class="text-green-700">✓ Set</span>{% else %}<span class="text-red-700">✗ Not set</span>{% endif %}
+        </dd>
+      </div>
+      {% endfor %}
+      <div class="flex flex-col sm:flex-row sm:justify-between gap-1 py-2.5">
+        <dt class="font-medium text-slate-600">Last audit-log purge</dt>
+        <dd class="font-bold {% if last_purge %}text-slate-900{% else %}text-amber-700{% endif %}">{% if last_purge %}{{ last_purge|date:"M d, Y H:i" }}{% else %}Never — schedule <code>python manage.py purge_access_logs</code> daily{% endif %}</dd>
+      </div>
+    </dl>
+  </div>
+  {% if token %}
+  <form method="post" class="rounded-2xl border border-red-100 bg-white shadow-lg p-5 sm:p-8">
+    {% csrf_token %}
+    <h3 class="text-lg font-black text-slate-900">Disconnect Microsoft account</h3>
+    <p class="text-sm text-slate-500 mb-4">Connected as <strong>{{ token.account_email }}</strong>{% if token.last_refreshed_at %}, last refreshed {{ token.last_refreshed_at|date:"M d, Y H:i" }}{% endif %}. Disconnecting stops all email sending and receiving until someone runs <code>microsoft_oauth_setup</code> again.</p>
+    <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-4"><input type="checkbox" name="confirm" value="disconnect" class="h-4 w-4 rounded border-slate-300"> I understand email will stop working</label>
+    <button type="submit" class="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700">Disconnect</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

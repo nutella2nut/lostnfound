@@ -1,0 +1,23 @@
+{% comment %}Settings tab strip. Pass settings_active = section key, "emails", "status", "users" or "roles".{% endcomment %}
+{% with a=settings_active %}
+<nav aria-label="Settings sections" class="mb-6 -mx-1 overflow-x-auto">
+  <div class="flex gap-1.5 px-1 pb-1 w-max">
+    <a href="{% url 'inventory:settings_section' 'general' %}" class="settings-tab {% if a == 'general' %}is-active{% endif %}">General</a>
+    <a href="{% url 'inventory:settings_section' 'claims' %}" class="settings-tab {% if a == 'claims' %}is-active{% endif %}">Claims</a>
+    <a href="{% url 'inventory:settings_section' 'uploads' %}" class="settings-tab {% if a == 'uploads' %}is-active{% endif %}">Uploads</a>
+    <a href="{% url 'inventory:settings_section' 'intake' %}" class="settings-tab {% if a == 'intake' %}is-active{% endif %}">Email reports</a>
+    <a href="{% url 'inventory:settings_section' 'broadcasts' %}" class="settings-tab {% if a == 'broadcasts' %}is-active{% endif %}">Broadcasts</a>
+    <a href="{% url 'inventory:settings_emails' %}" class="settings-tab {% if a == 'emails' %}is-active{% endif %}">Email templates</a>
+    <a href="{% url 'inventory:settings_section' 'notices' %}" class="settings-tab {% if a == 'notices' %}is-active{% endif %}">Notices</a>
+    <a href="{% url 'inventory:settings_section' 'privacy' %}" class="settings-tab {% if a == 'privacy' %}is-active{% endif %}">Audit &amp; privacy</a>
+    <a href="{% url 'inventory:user_management_list' %}" class="settings-tab {% if a == 'users' %}is-active{% endif %}">Users</a>
+    <a href="{% url 'inventory:user_role_change_history' %}" class="settings-tab {% if a == 'roles' %}is-active{% endif %}">Role changes</a>
+    <a href="{% url 'inventory:settings_status' %}" class="settings-tab {% if a == 'status' %}is-active{% endif %}">System status</a>
+  </div>
+</nav>
+<style>
+  .settings-tab { display:inline-flex; align-items:center; white-space:nowrap; border-radius:9999px; padding:.4rem .9rem; font-size:.8rem; font-weight:700; color:#475569; background:#f1f5f9; transition:background-color .15s; }
+  .settings-tab:hover { background:#e2e8f0; }
+  .settings-tab.is-active { background:#06b6d4; color:#fff; }
+</style>
+{% endwith %}

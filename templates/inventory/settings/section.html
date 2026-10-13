@@ -1,0 +1,18 @@
+{% extends "inventory/settings/base.html" %}
+{% block title %}{{ section_title }} · Settings{% endblock %}
+{% block settings_content %}
+<form method="post" class="max-w-3xl rounded-2xl border border-slate-100 bg-white shadow-lg p-5 sm:p-8" novalidate>
+  {% csrf_token %}
+  <h2 class="text-xl font-black text-slate-900">{{ section_title }}</h2>
+  <p class="text-sm text-slate-500 mb-6">{{ section_intro }}</p>
+  {% if form.non_field_errors %}
+  <div class="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</div>
+  {% endif %}
+  <div class="space-y-5">
+    {% for field in form %}{% include "inventory/settings/_field.html" %}{% endfor %}
+  </div>
+  <div class="mt-8 flex justify-end">
+    <button type="submit" class="rounded-xl bg-cyan-500 px-6 py-2.5 text-sm font-bold text-white shadow hover:bg-cyan-600">Save changes</button>
+  </div>
+</form>
+{% endblock %}

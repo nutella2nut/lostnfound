@@ -53,6 +53,9 @@ is_railway = (
 )
 
 if is_railway:
+    # Trust the proxy's forwarded scheme so request.is_secure() is correct.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
     # Always add the specific production domain
     railway_prod_domain = "https://lostnfound-production.up.railway.app"
     if railway_prod_domain not in csrf_trusted_origins_list:
@@ -117,6 +120,7 @@ MIDDLEWARE += [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "inventory.middleware.AuditLogMiddleware",
 ]
 
 ROOT_URLCONF = "lost_and_found_project.urls"
@@ -133,6 +137,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "inventory.context_processors.user_permissions",
+                "inventory.context_processors.site_settings",
             ],
         },
     },

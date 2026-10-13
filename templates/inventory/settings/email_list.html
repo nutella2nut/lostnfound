@@ -1,0 +1,19 @@
+{% extends "inventory/settings/base.html" %}
+{% block title %}Email templates · Settings{% endblock %}
+{% block settings_content %}
+<div class="max-w-3xl rounded-2xl border border-slate-100 bg-white shadow-lg p-5 sm:p-8">
+  <h2 class="text-xl font-black text-slate-900">Email templates</h2>
+  <p class="text-sm text-slate-500 mb-6">The emails {{ site.site_name }} sends to students and staff. Each can be edited or reset to its original text.</p>
+  <ul class="divide-y divide-slate-100">
+    {% for t in templates %}
+    <li class="flex items-center justify-between gap-4 py-3">
+      <div>
+        <a href="{% url 'inventory:settings_email_edit' t.key %}" class="font-bold text-slate-800 hover:text-cyan-600">{{ t.label }}</a>
+        <div class="text-xs {% if t.customised %}text-amber-700{% else %}text-slate-400{% endif %}">{% if t.customised %}Customised{% else %}Default text{% endif %}</div>
+      </div>
+      <a href="{% url 'inventory:settings_email_edit' t.key %}" class="shrink-0 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200">Edit</a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

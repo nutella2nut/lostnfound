@@ -25,8 +25,16 @@ urlpatterns = [
     # Broadcast (§2)
     path("staff/broadcast/<str:kind>/<int:pk>/", views.BroadcastItemView.as_view(), name="broadcast_item"),
     path("staff/broadcasts/", views.BroadcastHistoryView.as_view(), name="broadcast_history"),
+    # Audit log of all activity (Super Users only)
+    path("staff/audit-logs/", views.AccessAuditLogListView.as_view(), name="access_audit_log"),
     # How to report (§3.4)
     path("how-to-report-lost/", views.HowToReportLostView.as_view(), name="how_to_report_lost"),
+    # Settings (Super Users)
+    path("staff/settings/", views.SettingsIndexView.as_view(), name="settings"),
+    path("staff/settings/emails/", views.EmailTemplateListView.as_view(), name="settings_emails"),
+    path("staff/settings/emails/<str:key>/", views.EmailTemplateEditView.as_view(), name="settings_email_edit"),
+    path("staff/settings/status/", views.SettingsStatusView.as_view(), name="settings_status"),
+    path("staff/settings/<str:section>/", views.SettingsSectionView.as_view(), name="settings_section"),
     # Staff User Management (§6)
     path("staff/users/", views.UserManagementListView.as_view(), name="user_management_list"),
     path("staff/users/new/", views.UserManagementCreateView.as_view(), name="user_management_create"),

@@ -138,10 +138,11 @@
     <!-- Upload Form -->
     <form method="post" enctype="multipart/form-data" class="rounded-2xl sm:rounded-[2.5rem] border border-slate-100 bg-white shadow-lg p-4 sm:p-6 md:p-8" id="upload-form">
     {% csrf_token %}
+    {% if site.collect_fingerprint %}{% include "inventory/_forensic_field.html" %}{% endif %}
 
       <!-- Images Section -->
       <div class="mb-6 sm:mb-8">
-        <h2 class="text-xl sm:text-2xl font-black text-[#0F172A] mb-3 sm:mb-4 uppercase tracking-tight">Photographs of the item <span class="text-sm sm:text-base font-normal text-slate-500 normal-case">(up to 3)</span></h2>
+        <h2 class="text-xl sm:text-2xl font-black text-[#0F172A] mb-3 sm:mb-4 uppercase tracking-tight">Photographs of the item <span class="text-sm sm:text-base font-normal text-slate-500 normal-case">(up to {{ site.max_staff_upload_images }})</span></h2>
         <div id="image-fields-container" class="space-y-3 sm:space-y-4">
         {{ formset.management_form }}
         {% for form in formset %}
@@ -269,7 +270,7 @@
 
 <script>
 (function() {
-    const maxImages = 3;
+    const maxImages = {{ site.max_staff_upload_images }};
     let imageFieldCount = document.querySelectorAll('.image-field-wrapper').length;
     const formsetPrefix = '{{ formset.prefix }}';
     const totalFormsInput = document.querySelector(`#id_${formsetPrefix}-TOTAL_FORMS`);
