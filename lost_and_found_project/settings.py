@@ -142,7 +142,7 @@ WSGI_APPLICATION = "lost_and_found_project.wsgi.application"
 
 # Database configuration
 # Use Supabase/Vercel PostgreSQL in production, otherwise fall back to SQLite for local development
-database_url = (     os.environ.get("POSTGRES_URL")     or os.environ.get("DATABASE_URL") )
+database_url = (     os.environ.get("DATABASE_URL")     or os.environ.get("POSTGRES_URL") )
 if database_url:
     DATABASES = {
         "default": dj_database_url.parse(
