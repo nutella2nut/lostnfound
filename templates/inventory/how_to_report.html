@@ -12,6 +12,7 @@
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
+    {% if site.announcement_enabled and site.announcement_text %}<div class="px-4 pt-4 max-w-4xl mx-auto">{% include "inventory/_announcement.html" %}</div>{% endif %}
     <!-- Top Nav -->
     <nav class="bg-white border-b border-slate-200 px-4 sm:px-6 py-4">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
@@ -49,11 +50,11 @@
             <ol class="list-decimal list-inside space-y-3 text-slate-600 mb-6 ml-2">
                 <li><strong>Subject line</strong> — the name of the item (for example: "Black water bottle with name sticker").</li>
                 <li><strong>Body</strong> — a clear description of the item, where you last had it, and approximately when you lost it. Do not include personal details beyond what is necessary to identify the item.</li>
-                <li><strong>Attachments</strong> — up to 8 images of the item (or of an identical item, if you do not have a photo of yours). Accepted formats: JPG, PNG, HEIC, WEBP, GIF, BMP. Maximum 15 MB per image, 40 MB total.</li>
+                <li><strong>Attachments</strong> — up to {{ site.intake_max_images }} images of the item (or of an identical item, if you do not have a photo of yours). Accepted formats: JPG, PNG, HEIC, WEBP, GIF, BMP. Maximum {{ site.intake_max_image_mb }} MB per image, {{ site.intake_max_total_mb }} MB total.</li>
             </ol>
 
             <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                <p class="font-bold text-amber-800">You must send the email from your TISB email address (<code class="text-amber-700">...@tisb.ac.in</code>). Emails from any other address will be ignored.</p>
+                <p class="font-bold text-amber-800">You must send the email from your TISB email address (<code class="text-amber-700">...{{ site.allowed_email_domain }}</code>). Emails from any other address will be ignored.</p>
             </div>
 
             <h2 class="text-lg font-bold text-slate-800 mb-3">What happens next:</h2>
@@ -78,7 +79,7 @@
 
     <!-- Footer -->
     <footer class="text-center py-6 px-4 text-xs text-slate-400">
-        TRACE is operated by TISB. All claims and reports are logged. Misuse will be referred to the relevant Head of Year.
+        {{ site.misuse_disclaimer }}
     </footer>
 </body>
 </html>

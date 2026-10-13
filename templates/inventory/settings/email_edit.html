@@ -1,0 +1,30 @@
+{% extends "inventory/settings/base.html" %}
+{% block title %}{{ label }} · Settings{% endblock %}
+{% block settings_content %}
+<a href="{% url 'inventory:settings_emails' %}" class="mb-3 inline-block text-sm font-bold text-cyan-600 hover:underline">&larr; All email templates</a>
+<div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] max-w-6xl">
+  <form method="post" class="rounded-2xl border border-slate-100 bg-white shadow-lg p-5 sm:p-8" novalidate>
+    {% csrf_token %}
+    <h2 class="text-xl font-black text-slate-900">{{ label }}</h2>
+    <p class="text-sm mb-6 {% if customised %}text-amber-700{% else %}text-slate-500{% endif %}">{% if customised %}Customised — differs from the original text.{% else %}Using the original text.{% endif %}</p>
+    <div class="space-y-5">
+      {% for field in form %}{% include "inventory/settings/_field.html" %}{% endfor %}
+    </div>
+    <div class="mt-8 flex flex-wrap justify-between gap-3">
+      {% if customised %}
+      <button type="submit" name="reset" value="1" formnovalidate class="rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-200">Reset to original text</button>
+      {% else %}<span></span>{% endif %}
+      <button type="submit" class="rounded-xl bg-cyan-500 px-6 py-2.5 text-sm font-bold text-white shadow hover:bg-cyan-600">Save template</button>
+    </div>
+  </form>
+  <aside class="rounded-2xl border border-slate-100 bg-white shadow-lg p-5 h-fit">
+    <h3 class="text-sm font-black text-slate-900 mb-1">Placeholders</h3>
+    <p class="text-xs text-slate-500 mb-3">Type these exactly, including the braces. For a literal brace, type it twice: <code>{{"{{"}}</code></p>
+    <dl class="space-y-2 text-xs">
+      {% for name, desc in placeholders %}
+      <div><dt><code class="rounded bg-slate-100 px-1.5 py-0.5 font-bold text-slate-800">{{"{"}}{{ name }}{{"}"}}</code></dt><dd class="text-slate-500 mt-0.5">{{ desc }}</dd></div>
+      {% endfor %}
+    </dl>
+  </aside>
+</div>
+{% endblock %}

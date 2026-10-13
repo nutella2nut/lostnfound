@@ -11,7 +11,7 @@ from django.core.mail import send_mail, EmailMessage, EmailMultiAlternatives
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q, Count
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import Http404, JsonResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -25,10 +25,18 @@ from django.views.generic import DetailView, ListView, TemplateView
 from .forms import (
     ClaimItemForm, ItemForm, ItemImageFormSet,
     UserCreateForm, UserEditForm, UserSetPasswordForm,
+    BroadcastSettingsForm, ClaimSettingsForm, EmailTemplateForm, GeneralSettingsForm,
+    IntakeSettingsForm, NoticeSettingsForm, PrivacySettingsForm, UploadSettingsForm,
 )
 from .models import (
     Item, UserProfile, StudentLostItem, StudentLostItemImage, Claim,
-    ItemImage, BroadcastLog, UserRoleChangeLog,
+    ItemImage, BroadcastLog, UserRoleChangeLog, AccessAuditLog,
+    EmailTemplate, MicrosoftOAuthToken,
+)
+from .audit import record_access
+from .site_settings import (
+    EMAIL_TEMPLATES, allowed_placeholders, get_email_template, get_site_settings,
+    render_email, visible_claimed_items_q,
 )
 from .services import analyze_item_images
 
@@ -142,6 +150,14 @@ class ItemUploadView(LoginRequiredMixin, AdminOrSuperUserRequiredMixin, View):
             logger = logging.getLogger(__name__)
             logger.warning(f"Formset errors: {formset.errors}, non_form_errors: {formset.non_form_errors}")
 
+        site = get_site_settings()
+        if item_form.is_valid() and formset.is_valid():
+            image_count = sum(1 for f in formset.forms if f.cleaned_data.get("image"))
+            if image_count > site.max_staff_upload_images:
+                item_form.add_error(
+                    None, f"You can upload at most {site.max_staff_upload_images} images per item."
+                )
+
         if not (item_form.is_valid() and formset.is_valid()):
             return render(
                 request,
@@ -155,8 +171,12 @@ class ItemUploadView(LoginRequiredMixin, AdminOrSuperUserRequiredMixin, View):
         item = item_form.save(commit=False)
         item.created_by = request.user
 
-        # Set approval status based on user role
+        # Set approval status based on user role and the approval settings
         if is_super_user(request.user):
+            auto_approve = site.superuser_uploads_auto_approve
+        else:
+            auto_approve = not site.staff_uploads_require_approval
+        if auto_approve:
             item.approval_status = Item.ApprovalStatus.APPROVED
             item.approved_by = request.user
             item.approved_at = timezone.now()
@@ -164,13 +184,15 @@ class ItemUploadView(LoginRequiredMixin, AdminOrSuperUserRequiredMixin, View):
             item.approval_status = Item.ApprovalStatus.PENDING
 
         item.save()
-        
+
+        record_access(request, "ITEM_UPLOAD", item=item)
+
         # Only save formset if there are images
         formset.instance = item
         if formset.has_changed():
             formset.save()
 
-        if is_super_user(request.user):
+        if auto_approve:
             messages.success(
                 request,
                 f'Item "{item.title}" has been successfully uploaded and approved!',
@@ -239,33 +261,9 @@ class ItemListView(ListView):
     context_object_name = "items"
     paginate_by = 20
 
-    def get_claim_duration_days(self, category):
-        """Return the number of days a claimed item should remain visible based on category."""
-        duration_map = {
-            Item.Category.ELECTRONICS: 7,
-            Item.Category.SPORTS_AND_CLOTHING: 3,
-            Item.Category.BAGS_AND_CARRY: 1,
-            Item.Category.BOTTLES_AND_CONTAINERS: 1,
-            Item.Category.OTHER_MISC: 1,
-            Item.Category.DOCUMENTS_AND_IDS: 1,  # Default for documents
-            Item.Category.NOTEBOOKS_AND_BOOKS: 1,  # Default for notebooks
-        }
-        return duration_map.get(category, 1)
-
     def get_queryset(self):
-        now = timezone.now()
-        
-        # Build Q objects for claimed items that are still within their category-specific duration
-        claimed_q_objects = Q()
-        for category, _ in Item.Category.choices:
-            duration_days = self.get_claim_duration_days(category)
-            cutoff_date = now - timedelta(days=duration_days)
-            claimed_q_objects |= Q(
-                status=Item.Status.CLAIMED,
-                category=category,
-                claimed_at__isnull=False,
-                claimed_at__gte=cutoff_date
-            )
+        # Claimed items stay listed for a per-category window (Settings → Claims)
+        claimed_q_objects = visible_claimed_items_q()
         
         # Filter: Only approved items, only Senior Years items
         queryset = Item.objects.filter(
@@ -326,6 +324,23 @@ class ClaimItemView(View):
         logger = logging.getLogger(__name__)
 
         item = get_object_or_404(Item, pk=pk)
+        site = get_site_settings()
+
+        blocked = None
+        if not site.claims_enabled:
+            blocked = ("claims_disabled", "Claims are currently paused. Please try again later or visit the school reception.")
+        elif not site.allow_multiple_claims and item.claims.exists():
+            blocked = ("already_claimed", "This item has already been claimed. Please visit the school reception if it is yours.")
+        if blocked:
+            record_access(
+                request, "CLAIM_FAILED", item=item,
+                subject_name=request.POST.get("name", ""),
+                subject_email=request.POST.get("email", ""),
+                details={"reason": blocked[0]},
+            )
+            messages.error(request, blocked[1])
+            return redirect("inventory:item_detail", pk=pk)
+
         form = ClaimItemForm(request.POST)
 
         if form.is_valid():
@@ -337,6 +352,8 @@ class ClaimItemView(View):
                 claimant_name=name,
                 claimant_email=email_addr,
             )
+
+            record_access(request, "CLAIM", item=item, claim=claim)
 
             if item.status == Item.Status.FOUND:
                 item.status = Item.Status.CLAIMED
@@ -350,35 +367,22 @@ class ClaimItemView(View):
             ).strftime("%-d %B %Y, %-I:%M %p IST")
             date_found_ist = item.date_found.strftime("%-d %B %Y")
 
-            send_system_email(
-                subject=f'Your claim has been recorded — "{item.title}"',
-                message=(
-                    f"Hi {name},\n\n"
-                    "This email confirms that you have submitted a claim for the following "
-                    "item through TRACE, the TISB Lost & Found system.\n\n"
-                    f"Item:           {item.title}\n"
-                    f"Category:       {item.get_category_display()}\n"
-                    f"Found at:       {item.location_found}\n"
-                    f"Found on:       {date_found_ist}\n"
-                    f"Claim submitted: {claimed_at_ist}\n\n"
-                    "To take possession of this item you must come in person to the school reception "
-                    "during school hours. Please bring a valid form of TISB identification. The item "
-                    "will only be released to you in person — it will not be released to any other "
-                    "student, sibling, parent, or staff member acting on your behalf.\n\n"
-                    "If you did not submit this claim, reply to this email immediately so that "
-                    "staff can investigate.\n\n"
-                    "— TRACE, TISB Lost & Found"
-                ),
-                recipient_list=[email_addr],
+            subject, body, _ = render_email(
+                "claim_confirmation",
+                name=name,
+                item_title=item.title,
+                category=item.get_category_display(),
+                location_found=item.location_found,
+                date_found=date_found_ist,
+                claimed_at=claimed_at_ist,
             )
+            send_system_email(subject=subject, message=body, recipient_list=[email_addr])
 
             # §3.1.4 Success banner
             messages.success(
                 request,
                 f"Your claim has been recorded. A confirmation has been sent to {email_addr}. "
-                "To take possession of this item you must come in person to the school reception "
-                "during school hours and present a valid form of TISB identification. "
-                "Items will not be handed over to any person other than the named claimant.",
+                + site.claim_success_notice,
             )
 
             logger.info(
@@ -386,6 +390,12 @@ class ClaimItemView(View):
                 item.title, item.pk, name, email_addr, claim.claimed_at,
             )
         else:
+            record_access(
+                request, "CLAIM_FAILED", item=item,
+                subject_name=request.POST.get("name", ""),
+                subject_email=request.POST.get("email", ""),
+                details={"errors": form.errors.get_json_data()},
+            )
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, error)
@@ -522,6 +532,7 @@ class AdminDashboardView(LoginRequiredMixin, AdminOrSuperUserRequiredMixin, View
                     if not item.claimed_at:
                         item.claimed_at = timezone.now()
                     item.save()
+                    record_access(request, "ITEM_COLLECTED", item=item)
                     return JsonResponse({'success': True, 'message': f'Item "{item.title}" marked as collected by student'})
                 except Item.DoesNotExist:
                     return JsonResponse({'success': False, 'error': 'Item not found'}, status=404)
@@ -530,6 +541,7 @@ class AdminDashboardView(LoginRequiredMixin, AdminOrSuperUserRequiredMixin, View
                 try:
                     item = Item.objects.get(pk=item_id)
                     item_title = item.title
+                    record_access(request, "ITEM_DELETE", item=item)
                     item.delete()
                     messages.success(request, f'Item "{item_title}" has been successfully deleted.')
                     return JsonResponse({'success': True, 'message': f'Item "{item_title}" deleted successfully'})
@@ -548,33 +560,9 @@ class PrimaryYearsListView(ListView):
     context_object_name = "items"
     paginate_by = 20
 
-    def get_claim_duration_days(self, category):
-        """Return the number of days a claimed item should remain visible based on category."""
-        duration_map = {
-            Item.Category.ELECTRONICS: 7,
-            Item.Category.SPORTS_AND_CLOTHING: 3,
-            Item.Category.BAGS_AND_CARRY: 1,
-            Item.Category.BOTTLES_AND_CONTAINERS: 1,
-            Item.Category.OTHER_MISC: 1,
-            Item.Category.DOCUMENTS_AND_IDS: 1,
-            Item.Category.NOTEBOOKS_AND_BOOKS: 1,
-        }
-        return duration_map.get(category, 1)
-
     def get_queryset(self):
-        now = timezone.now()
-        
-        # Build Q objects for claimed items that are still within their category-specific duration
-        claimed_q_objects = Q()
-        for category, _ in Item.Category.choices:
-            duration_days = self.get_claim_duration_days(category)
-            cutoff_date = now - timedelta(days=duration_days)
-            claimed_q_objects |= Q(
-                status=Item.Status.CLAIMED,
-                category=category,
-                claimed_at__isnull=False,
-                claimed_at__gte=cutoff_date
-            )
+        # Claimed items stay listed for a per-category window (Settings → Claims)
+        claimed_q_objects = visible_claimed_items_q()
         
         # Filter: Only approved items, only Primary Years items
         queryset = Item.objects.filter(
@@ -743,6 +731,7 @@ class ApproveItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             item.approved_by = request.user
             item.approved_at = timezone.now()
             item.save()
+            record_access(request, "ITEM_APPROVE", item=item)
             messages.success(request, f'Item "{item.title}" has been approved!')
             return redirect('inventory:approval_queue')
         elif item_type == 'student':
@@ -765,23 +754,14 @@ class ApproveItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             item.approved_by = request.user
             item.approved_at = timezone.now()
             item.save()
+            record_access(request, "ITEM_APPROVE", student_item=item)
             # §3.5.1 Approval email
             if item.email_from:
                 first_name = item.submitter_display_name.split()[0] if item.submitter_display_name else "there"
-                send_system_email(
-                    subject=f'Your lost item report has been approved — "{item.title}"',
-                    message=(
-                        f"Hi {first_name},\n\n"
-                        "Your lost item report has been reviewed and approved by TRACE staff. "
-                        "It is now visible on the Students' Lost Items page of TRACE.\n\n"
-                        f"Item: {item.title}\n\n"
-                        "If this item is found, you will be contacted at this email address. "
-                        "To take possession of the item you must come in person to the school reception "
-                        "during school hours and present a valid form of TISB identification.\n\n"
-                        "— TRACE, TISB Lost & Found"
-                    ),
-                    recipient_list=[item.email_from],
+                subject, body, _ = render_email(
+                    "report_approved", first_name=first_name, item_title=item.title,
                 )
+                send_system_email(subject=subject, message=body, recipient_list=[item.email_from])
             messages.success(request, f'Student lost item "{item.title}" has been approved!')
             return redirect('inventory:approval_queue')
         else:
@@ -806,6 +786,7 @@ class RejectItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             item.approved_at = timezone.now()
             item.rejection_reason = rejection_reason
             item.save()
+            record_access(request, "ITEM_REJECT", item=item, details={"reason": rejection_reason})
             messages.success(request, f'Item "{item.title}" has been rejected.')
             return redirect("inventory:approval_queue")
         elif item_type == "student":
@@ -819,6 +800,7 @@ class RejectItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             item.approved_at = timezone.now()
             item.rejection_reason = rejection_reason
             item.save()
+            record_access(request, "ITEM_REJECT", student_item=item, details={"reason": rejection_reason})
             # §3.5.2 Rejection email
             if item.email_from:
                 first_name = item.submitter_display_name.split()[0] if item.submitter_display_name else "there"
@@ -828,21 +810,15 @@ class RejectItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
                 reason_line = ""
                 if rejection_reason:
                     reason_line = f"Reason provided by staff: {rejection_reason}\n\n"
-                send_system_email(
-                    subject=f'Your lost item report was not approved — "{item.title}"',
-                    message=(
-                        f"Hi {first_name},\n\n"
-                        f"Your lost item report submitted on {submitted_at_ist} was reviewed "
-                        "by TRACE staff and was not approved for display.\n\n"
-                        f"{reason_line}"
-                        "If you believe this decision was made in error, or if you would like "
-                        f"to resubmit with additional information, you may send a new email to "
-                        f"{settings.LF_EMAIL_ADDRESS}. Please follow the submission format "
-                        "described on the \"How to report a lost item\" page of TRACE.\n\n"
-                        "— TRACE, TISB Lost & Found"
-                    ),
-                    recipient_list=[item.email_from],
+                subject, body, _ = render_email(
+                    "report_rejected",
+                    first_name=first_name,
+                    item_title=item.title,
+                    submitted_at=submitted_at_ist,
+                    reason_line=reason_line,
+                    report_email=settings.LF_EMAIL_ADDRESS,
                 )
+                send_system_email(subject=subject, message=body, recipient_list=[item.email_from])
             messages.success(
                 request, f'Student lost item "{item.title}" has been rejected.'
             )
@@ -888,7 +864,7 @@ class BroadcastItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
         past_broadcasts = BroadcastLog.objects.filter(
             **{("student_lost_item" if db_kind == "STUDENT_LOST" else "found_item"): item}
         )
-        recipients = getattr(settings, "LF_BROADCAST_RECIPIENTS_LIST", [])
+        recipients = get_site_settings().broadcast_recipient_list
         subject, body = self._compose_email(request, item, kind)
         return render(request, "inventory/broadcast_confirm.html", {
             "item": item,
@@ -907,28 +883,29 @@ class BroadcastItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             messages.error(request, "Invalid item type.")
             return redirect("inventory:landing")
 
-        # Rate limit: max 3 broadcasts per item per 24h (§2.9)
-        cutoff = timezone.now() - timedelta(hours=24)
+        # Rate limit per item (§2.9; limits set in Settings → Broadcasts)
+        site = get_site_settings()
+        cutoff = timezone.now() - timedelta(hours=site.broadcast_limit_hours)
         fk_field = "student_lost_item" if db_kind == "STUDENT_LOST" else "found_item"
         recent_count = BroadcastLog.objects.filter(
             **{fk_field: item}, sent_at__gte=cutoff
         ).count()
-        if recent_count >= 3:
+        if recent_count >= site.broadcast_limit_count:
             messages.error(
                 request,
-                "This item has already been broadcast 3 times in the last 24 hours. "
-                "Please wait before sending again.",
+                f"This item has already been broadcast {site.broadcast_limit_count} times in the "
+                f"last {site.broadcast_limit_hours} hours. Please wait before sending again.",
             )
             return redirect(request.path)
 
-        recipients = getattr(settings, "LF_BROADCAST_RECIPIENTS_LIST", [])
+        recipients = site.broadcast_recipient_list
         if not recipients:
             messages.error(request, "No broadcast recipients configured.")
             return redirect(request.path)
 
         subject, body = self._compose_email(request, item, kind)
         email_address = getattr(settings, "LF_EMAIL_ADDRESS", settings.EMAIL_HOST_USER)
-        display_name = getattr(settings, "LF_EMAIL_DISPLAY_NAME", "TRACE Lost & Found")
+        display_name = site.sender_display_name
         from_email = f"{display_name} <{email_address}>"
 
         # Build email with attachments and HTML alternative
@@ -943,7 +920,8 @@ class BroadcastItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
         )
         msg.attach_alternative(html_body, "text/html")
 
-        # Attach images (§2.6 — mandatory when images exist, 20MB total cap)
+        # Attach images (§2.6 — mandatory when images exist, total size capped in Settings)
+        max_attachment_bytes = site.broadcast_max_attachment_mb * 1024 * 1024
         images = self._get_images(item, db_kind)
         total_size = 0
         attached = 0
@@ -952,7 +930,7 @@ class BroadcastItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
                 img.image.open("rb")
                 data = img.image.read()
                 img.image.close()
-                if total_size + len(data) > 20 * 1024 * 1024:
+                if total_size + len(data) > max_attachment_bytes:
                     break
                 fname = os.path.basename(img.image.name)
                 msg.attach(fname, data, "image/jpeg")
@@ -1014,30 +992,26 @@ class BroadcastItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             ist = timezone.get_fixed_timezone(330)
             date_str = item.submitted_at.astimezone(ist).strftime("%-d %B %Y, %-I:%M %p IST")
             detail_url = base_url + reverse("inventory:student_lost_item_detail", args=[item.pk])
-            subject = f'TISB Lost & Found — Lost item reported: "{item.title}"'
+            subject, intro, closing = render_email("broadcast_lost", item_title=item.title)
             body = (
-                "A student has reported the following item as lost. If you have seen this item, "
-                "or if you have it in your possession, please bring it to the school reception in person.\n\n"
+                f"{intro}\n\n"
                 f"Item: {item.title}\n\n"
                 f"Description:\n{item.description}\n\n"
                 f"Reported by: {name}\n"
                 f"Date reported: {date_str}\n\n"
                 f"Photographs of the item are attached to this email and can also be viewed "
                 f"in full resolution on TRACE:\n{detail_url}\n\n"
-                "If this item is yours and has been found, you must collect it in person from "
-                "the school reception. The Lost & Found system does not release items to anyone "
-                "other than the rightful owner, in person.\n\n"
+                f"{closing}\n\n"
                 "This email was sent by the TISB Lost & Found staff via TRACE.\n"
-                "— TRACE, TISB Lost & Found"
+                f"{get_site_settings().email_signoff}"
             )
         else:
             detail_url = base_url + reverse("inventory:item_detail", args=[item.pk])
             ist = timezone.get_fixed_timezone(330)
             date_str = item.date_found.strftime("%-d %B %Y")
-            subject = f'TISB Lost & Found — Item found: "{item.title}"'
+            subject, intro, closing = render_email("broadcast_found", item_title=item.title)
             body = (
-                "An item has been found and logged by TRACE staff. If you recognise this item "
-                "as your personal property, please come to the school reception in person to claim it.\n\n"
+                f"{intro}\n\n"
                 f"Item: {item.title}\n"
                 f"Category: {item.get_category_display()}\n"
                 f"Found at: {item.location_found}\n"
@@ -1045,11 +1019,9 @@ class BroadcastItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
                 f"Description:\n{item.description}\n\n"
                 f"Photographs of the item are attached to this email and can also be viewed "
                 f"in full resolution on TRACE:\n{detail_url}\n\n"
-                "To take possession of this item you must come in person to the school reception "
-                "during school hours and present a valid form of TISB identification. Items will "
-                "not be handed over to any person other than the rightful owner, in person.\n\n"
+                f"{closing}\n\n"
                 "This email was sent by the TISB Lost & Found staff via TRACE.\n"
-                "— TRACE, TISB Lost & Found"
+                f"{get_site_settings().email_signoff}"
             )
         return subject, body
 
@@ -1061,7 +1033,11 @@ class BroadcastItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             ist = timezone.get_fixed_timezone(330)
             date_str = item.submitted_at.astimezone(ist).strftime("%-d %B %Y, %-I:%M %p IST")
             detail_url = base_url + reverse("inventory:student_lost_item_detail", args=[item.pk])
+            _, intro, closing = render_email("broadcast_lost", item_title=item.title)
             return render_to_string("inventory/email/broadcast_student_lost.html", {
+                "intro": intro,
+                "closing": closing,
+                "signoff": get_site_settings().email_signoff,
                 "title": item.title,
                 "description": item.description,
                 "reported_by": name,
@@ -1072,7 +1048,11 @@ class BroadcastItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             ist = timezone.get_fixed_timezone(330)
             date_str = item.date_found.strftime("%-d %B %Y")
             detail_url = base_url + reverse("inventory:item_detail", args=[item.pk])
+            _, intro, closing = render_email("broadcast_found", item_title=item.title)
             return render_to_string("inventory/email/broadcast_found_item.html", {
+                "intro": intro,
+                "closing": closing,
+                "signoff": get_site_settings().email_signoff,
                 "title": item.title,
                 "description": item.description,
                 "category": item.get_category_display(),
@@ -1506,3 +1486,206 @@ class UserRoleChangeHistoryView(LoginRequiredMixin, SuperUserRequiredMixin, List
         ctx["action_choices"] = UserRoleChangeLog.ACTION_CHOICES
         return ctx
 
+
+class AccessAuditLogListView(LoginRequiredMixin, SuperUserRequiredMixin, ListView):
+    """Audit log of all user activity — Super Users only."""
+    model = AccessAuditLog
+    template_name = "inventory/audit_log.html"
+    context_object_name = "logs"
+    paginate_by = 50
+
+    def get_queryset(self):
+        qs = AccessAuditLog.objects.select_related("actor", "item", "student_item", "claim")
+        action = self.request.GET.get("action")
+        if action == "EVENTS":
+            qs = qs.exclude(action__in=["PAGE_VIEW", "FORM_SUBMIT"])
+        elif action:
+            qs = qs.filter(action=action)
+        search = (self.request.GET.get("q") or "").strip()
+        if search:
+            qs = qs.filter(
+                Q(subject_name__icontains=search)
+                | Q(subject_email__icontains=search)
+                | Q(actor_username_snapshot__icontains=search)
+                | Q(ip_address__icontains=search)
+                | Q(item_title_snapshot__icontains=search)
+                | Q(request_path__icontains=search)
+            )
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["action_choices"] = AccessAuditLog.ACTION_CHOICES
+        ctx["current_action"] = self.request.GET.get("action", "")
+        ctx["search_query"] = self.request.GET.get("q", "")
+        return ctx
+
+
+
+# ---------------------------------------------------------------------------
+# Settings (Super Users) — editable SiteSettings, email templates, system status
+# ---------------------------------------------------------------------------
+
+# key -> (title, intro, form class)
+SETTINGS_SECTIONS = {
+    "general": ("General & branding", "Names, sign-off and the site-wide announcement banner.", GeneralSettingsForm),
+    "claims": ("Claims", "Who can claim, whether claims are open, and how long claimed items stay listed.", ClaimSettingsForm),
+    "uploads": ("Uploads & approval", "Approval rules and AI auto-fill for staff uploads.", UploadSettingsForm),
+    "intake": ("Student email reports", "Limits for lost-item reports students send by email.", IntakeSettingsForm),
+    "broadcasts": ("Broadcasts", "Who receives broadcast emails and how often an item can be broadcast.", BroadcastSettingsForm),
+    "notices": ("Notices", "Wording shown on the claim form and in the page footer.", NoticeSettingsForm),
+    "privacy": ("Audit & privacy", "How much activity is logged and how long it is kept.", PrivacySettingsForm),
+}
+
+
+def _short(value):
+    text = "" if value is None else str(value)
+    return text if len(text) <= 300 else text[:297] + "..."
+
+
+def _log_settings_change(request, section, changes):
+    if changes:
+        record_access(request, "SETTINGS_CHANGE", details={"section": section, "changes": changes})
+
+
+class SettingsIndexView(LoginRequiredMixin, SuperUserRequiredMixin, View):
+    def get(self, request):
+        return redirect("inventory:settings_section", section="general")
+
+
+class SettingsSectionView(LoginRequiredMixin, SuperUserRequiredMixin, View):
+    template_name = "inventory/settings/section.html"
+
+    def _section(self, section):
+        if section not in SETTINGS_SECTIONS:
+            raise Http404("Unknown settings section")
+        return SETTINGS_SECTIONS[section]
+
+    def get(self, request, section):
+        title, intro, form_class = self._section(section)
+        form = form_class(instance=get_site_settings())
+        return self._render(request, section, form)
+
+    def post(self, request, section):
+        title, intro, form_class = self._section(section)
+        form = form_class(request.POST, instance=get_site_settings())
+        if not form.is_valid():
+            return self._render(request, section, form)
+        changes = {
+            name: [_short(form.initial.get(name)), _short(form.cleaned_data.get(name))]
+            for name in form.changed_data
+        }
+        form.save()
+        _log_settings_change(request, section, changes)
+        messages.success(request, f"{title} settings saved." if changes else "No changes to save.")
+        return redirect("inventory:settings_section", section=section)
+
+    def _render(self, request, section, form):
+        title, intro, _ = SETTINGS_SECTIONS[section]
+        return render(request, self.template_name, {
+            "form": form, "section": section, "section_title": title, "section_intro": intro,
+            "settings_active": section, "settings_sections": SETTINGS_SECTIONS,
+        })
+
+
+class EmailTemplateListView(LoginRequiredMixin, SuperUserRequiredMixin, View):
+    def get(self, request):
+        customised = set(EmailTemplate.objects.values_list("key", flat=True))
+        templates = [
+            {"key": key, "label": d["label"], "customised": key in customised}
+            for key, d in EMAIL_TEMPLATES.items()
+        ]
+        return render(request, "inventory/settings/email_list.html", {
+            "templates": templates, "settings_active": "emails",
+            "settings_sections": SETTINGS_SECTIONS,
+        })
+
+
+class EmailTemplateEditView(LoginRequiredMixin, SuperUserRequiredMixin, View):
+    template_name = "inventory/settings/email_edit.html"
+
+    def _definition(self, key):
+        if key not in EMAIL_TEMPLATES:
+            raise Http404("Unknown email template")
+        return EMAIL_TEMPLATES[key]
+
+    def get(self, request, key):
+        self._definition(key)
+        subject, body, closing = get_email_template(key)
+        form = EmailTemplateForm(key=key, initial={"subject": subject, "body": body, "closing": closing})
+        return self._render(request, key, form)
+
+    def post(self, request, key):
+        d = self._definition(key)
+        old = get_email_template(key)
+        if "reset" in request.POST:
+            EmailTemplate.objects.filter(key=key).delete()
+            _log_settings_change(request, f"email:{key}", {"reset_to_default": [True, True]})
+            messages.success(request, f"“{d['label']}” reset to the default text.")
+            return redirect("inventory:settings_email_edit", key=key)
+
+        form = EmailTemplateForm(request.POST, key=key)
+        if not form.is_valid():
+            return self._render(request, key, form)
+        new = (
+            form.cleaned_data["subject"],
+            form.cleaned_data["body"].replace("\r\n", "\n"),
+            form.cleaned_data.get("closing", "").replace("\r\n", "\n"),
+        )
+        EmailTemplate.objects.update_or_create(
+            key=key, defaults={"subject": new[0], "body": new[1], "closing": new[2]},
+        )
+        changes = {
+            name: [_short(a), _short(b)]
+            for name, a, b in zip(("subject", "body", "closing"), old, new) if a != b
+        }
+        _log_settings_change(request, f"email:{key}", changes)
+        messages.success(request, f"“{d['label']}” saved.")
+        return redirect("inventory:settings_email_edit", key=key)
+
+    def _render(self, request, key, form):
+        d = EMAIL_TEMPLATES[key]
+        return render(request, self.template_name, {
+            "form": form, "key": key, "label": d["label"],
+            "placeholders": sorted(allowed_placeholders(key).items()),
+            "customised": EmailTemplate.objects.filter(key=key).exists(),
+            "settings_active": "emails", "settings_sections": SETTINGS_SECTIONS,
+        })
+
+
+class SettingsStatusView(LoginRequiredMixin, SuperUserRequiredMixin, View):
+    """Read-only view of environment configuration. Secrets show only as set/not set."""
+    template_name = "inventory/settings/status.html"
+
+    def get(self, request):
+        token = MicrosoftOAuthToken.objects.first()
+        checks = [
+            ("Outgoing email backend", settings.EMAIL_BACKEND.rsplit(".", 1)[-1], None),
+            ("SMTP server (EMAIL_HOST)", getattr(settings, "EMAIL_HOST", "") or "—", None),
+            ("Lost & found mailbox (LF_EMAIL_ADDRESS)", getattr(settings, "LF_EMAIL_ADDRESS", "") or "—", None),
+            ("Mailbox password (LF_EMAIL_PASSWORD)", None, bool(getattr(settings, "LF_EMAIL_PASSWORD", ""))),
+            ("SMTP password (EMAIL_HOST_PASSWORD)", None, bool(getattr(settings, "EMAIL_HOST_PASSWORD", ""))),
+            ("Microsoft OAuth app (MS_OAUTH_CLIENT_ID)", None, bool(getattr(settings, "MS_OAUTH_CLIENT_ID", ""))),
+            ("Microsoft OAuth connected account", token.account_email if token else "Not connected", None),
+            ("Google AI key (GOOGLE_API_KEY)", None, bool(getattr(settings, "GOOGLE_API_KEY", ""))),
+            ("Media storage (MEDIA_BACKEND)", getattr(settings, "MEDIA_BACKEND", "local"), None),
+            ("Debug mode", "ON — must be off in production" if settings.DEBUG else "Off", None),
+            ("Server timezone", settings.TIME_ZONE, None),
+        ]
+        return render(request, self.template_name, {
+            "checks": checks, "token": token,
+            "last_purge": get_site_settings().last_audit_purge_at,
+            "settings_active": "status", "settings_sections": SETTINGS_SECTIONS,
+        })
+
+    def post(self, request):
+        # Disconnect the Microsoft account (same as the Django admin "revoke" action).
+        if request.POST.get("confirm") != "disconnect":
+            messages.error(request, "Tick the confirmation box to disconnect the Microsoft account.")
+            return redirect("inventory:settings_status")
+        token = MicrosoftOAuthToken.objects.first()
+        if token:
+            _log_settings_change(request, "status", {"microsoft_oauth": [token.account_email, "disconnected"]})
+            token.delete()
+            messages.success(request, "Microsoft account disconnected. Email sending will stop until it is reconnected.")
+        return redirect("inventory:settings_status")

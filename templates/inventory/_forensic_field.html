@@ -1,0 +1,65 @@
+{% comment %}
+Forensic browser/device capture. Renders a hidden input that is filled on page
+load with a JSON blob of client-side metadata. Include this INSIDE a <form>.
+Server-side capture (IP, user-agent, headers) happens separately in the view.
+{% endcomment %}
+<input type="hidden" name="client_metadata" class="forensic-metadata" value="">
+<script>
+(function () {
+  function collect() {
+    var nav = window.navigator || {};
+    var scr = window.screen || {};
+    var tz = "";
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+    var data = {
+      userAgent: nav.userAgent || "",
+      platform: (nav.userAgentData && nav.userAgentData.platform) || nav.platform || "",
+      language: nav.language || "",
+      languages: nav.languages || [],
+      hardwareConcurrency: nav.hardwareConcurrency || null,
+      deviceMemory: nav.deviceMemory || null,
+      maxTouchPoints: nav.maxTouchPoints || 0,
+      cookieEnabled: nav.cookieEnabled || false,
+      doNotTrack: nav.doNotTrack || null,
+      timezone: tz,
+      timezoneOffset: new Date().getTimezoneOffset(),
+      screen: {
+        width: scr.width || null,
+        height: scr.height || null,
+        availWidth: scr.availWidth || null,
+        availHeight: scr.availHeight || null,
+        colorDepth: scr.colorDepth || null,
+        pixelRatio: window.devicePixelRatio || null
+      },
+      viewport: {
+        innerWidth: window.innerWidth || null,
+        innerHeight: window.innerHeight || null
+      }
+    };
+    // Lightweight non-crypto fingerprint hash (djb2) of the stable attributes.
+    var basis = [
+      data.userAgent, data.platform, data.language, data.timezone,
+      data.screen.width, data.screen.height, data.screen.colorDepth,
+      data.hardwareConcurrency, data.deviceMemory, data.maxTouchPoints
+    ].join("|");
+    var hash = 5381;
+    for (var i = 0; i < basis.length; i++) {
+      hash = ((hash << 5) + hash + basis.charCodeAt(i)) >>> 0;
+    }
+    data.fingerprint = hash.toString(16);
+    return JSON.stringify(data);
+  }
+  function fill() {
+    var payload = collect();
+    var fields = document.querySelectorAll("input.forensic-metadata");
+    for (var i = 0; i < fields.length; i++) {
+      fields[i].value = payload;
+    }
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", fill);
+  } else {
+    fill();
+  }
+})();
+</script>

@@ -7,7 +7,7 @@ from datetime import timedelta
 
 from .models import (
     Item, ItemImage, StudentLostItem, StudentLostItemImage, UserProfile, Claim,
-    MicrosoftOAuthToken, BroadcastLog, UserRoleChangeLog,
+    MicrosoftOAuthToken, BroadcastLog, UserRoleChangeLog, AccessAuditLog,
 )
 from .views import is_super_user
 
@@ -219,6 +219,32 @@ class UserRoleChangeLogAdmin(admin.ModelAdmin):
     list_filter = ("action", "created_at")
     search_fields = ("target_username_snapshot", "performed_by_username_snapshot")
     readonly_fields = ("target_user", "target_username_snapshot", "performed_by", "performed_by_username_snapshot", "action", "details", "created_at")
+
+
+@admin.register(AccessAuditLog)
+class AccessAuditLogAdmin(admin.ModelAdmin):
+    """Read-only audit log. Super Users only (via has_view_permission)."""
+    list_display = ("action", "created_at", "subject_name", "subject_email", "actor_username_snapshot", "ip_address", "request_path")
+    list_filter = ("action", "created_at")
+    search_fields = ("subject_name", "subject_email", "actor_username_snapshot", "ip_address", "item_title_snapshot", "request_path")
+    readonly_fields = (
+        "action", "actor", "actor_username_snapshot", "item", "student_item", "item_title_snapshot", "claim",
+        "subject_name", "subject_email", "ip_address", "forwarded_for",
+        "user_agent", "accept_language", "referer", "request_path",
+        "request_method", "client_metadata", "details", "created_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
 
 
 # Custom User Admin for Super Users to manage roles

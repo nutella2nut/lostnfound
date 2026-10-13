@@ -19,17 +19,16 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from inventory.audit import record_access
 from inventory.constants import NEEDS_REVIEW_REASONS
+from inventory.site_settings import get_site_settings, render_email
 from inventory.models import StudentLostItem, StudentLostItemImage
 
 logger = logging.getLogger("inventory.check_emails")
 
 # Limits per §1.3.4
-MAX_IMAGE_SIZE = 15 * 1024 * 1024  # 15 MB
-MAX_TOTAL_SIZE = 40 * 1024 * 1024  # 40 MB
-MAX_IMAGES = 8
-MAX_TITLE_LENGTH = 200
-MAX_DESCRIPTION_LENGTH = 5000
+# Size/count/length limits live in SiteSettings (Settings → Email intake) and are
+# read at the start of every message so changes apply without a restart.
 
 # Accepted image extensions per §1.3.4
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif", ".bmp"}
@@ -191,7 +190,12 @@ class Command(BaseCommand):
 
     def _run_cycle(self):
         """Single email-check cycle."""
-        allowed_domain = settings.LF_ALLOWED_SENDER_DOMAIN
+        site = get_site_settings()
+        if not site.email_reports_enabled:
+            # Leave messages unread so they're processed once intake is re-enabled.
+            logger.info("Email reports are disabled in Settings; skipping cycle.")
+            return
+        allowed_domain = site.allowed_email_domain
         n_fetched = 0
         n_created = 0
         n_skipped = 0
@@ -247,6 +251,13 @@ class Command(BaseCommand):
 
         msg = email.message_from_bytes(msg_data[0][1])
 
+        site = get_site_settings()
+        max_image_size = site.intake_max_image_mb * 1024 * 1024
+        max_total_size = site.intake_max_total_mb * 1024 * 1024
+        max_images = site.intake_max_images
+        max_title_length = site.intake_max_title_length
+        max_description_length = site.intake_max_description_length
+
         # Parse From header
         raw_from = msg.get("From", "")
         display_name, from_email = parseaddr(raw_from)
@@ -293,9 +304,9 @@ class Command(BaseCommand):
             title = "Untitled lost item submission"
             review_reasons.append("TITLE_MISSING")
 
-        if len(title) > MAX_TITLE_LENGTH:
-            title = title[:MAX_TITLE_LENGTH] + "…"
-            logger.info("Title truncated to %d chars for: %s", MAX_TITLE_LENGTH, from_email)
+        if len(title) > max_title_length:
+            title = title[:max_title_length] + "…"
+            logger.info("Title truncated to %d chars for: %s", max_title_length, from_email)
 
         # §1.3.3 Body → Description
         body = self._extract_body(msg)
@@ -305,8 +316,10 @@ class Command(BaseCommand):
             body = "No description was provided by the student in the email body."
             review_reasons.append("BODY_EMPTY")
 
-        if len(body) > MAX_DESCRIPTION_LENGTH:
-            body = body[:MAX_DESCRIPTION_LENGTH] + "\n\n[Description truncated — original email body exceeded 5000 characters.]"
+        if len(body) > max_description_length:
+            body = body[:max_description_length] + (
+                f"\n\n[Description truncated — original email body exceeded {max_description_length} characters.]"
+            )
 
         # §1.3.4 Attachments → Images
         images = []
@@ -324,19 +337,19 @@ class Command(BaseCommand):
 
                 size = len(img_bytes)
 
-                if size > MAX_IMAGE_SIZE:
+                if size > max_image_size:
                     review_reasons.append("ATTACHMENT_OVERSIZED")
                     logger.info("Skipping oversized attachment (%d bytes): %s", size, filename)
                     continue
 
                 total_size += size
-                if total_size > MAX_TOTAL_SIZE:
+                if total_size > max_total_size:
                     oversized_total = True
                     review_reasons.append("TOTAL_OVERSIZED")
-                    logger.info("Total attachment size exceeded 40 MB")
+                    logger.info("Total attachment size exceeded %d MB", site.intake_max_total_mb)
                     break
 
-                if len(images) >= MAX_IMAGES:
+                if len(images) >= max_images:
                     review_reasons.append("TOO_MANY_IMAGES")
                     break
 
@@ -356,8 +369,8 @@ class Command(BaseCommand):
             1 for part in msg.walk() if is_image_attachment(part)
         ) if msg.is_multipart() else 0
 
-        if n_total_attachments > MAX_IMAGES and "TOO_MANY_IMAGES" in review_reasons:
-            body += f"\n\n[Note: this submission included {n_total_attachments} images; only the first {MAX_IMAGES} were attached.]"
+        if n_total_attachments > max_images and "TOO_MANY_IMAGES" in review_reasons:
+            body += f"\n\n[Note: this submission included {n_total_attachments} images; only the first {max_images} were attached.]"
 
         # Deduplicate review reasons and join
         seen_reasons = set()
@@ -365,7 +378,11 @@ class Command(BaseCommand):
         # Maintain canonical order
         for key in NEEDS_REVIEW_REASONS:
             if key in review_reasons and key not in seen_reasons:
-                unique_reasons.append(NEEDS_REVIEW_REASONS[key])
+                unique_reasons.append(NEEDS_REVIEW_REASONS[key].format(
+                    max_image_mb=site.intake_max_image_mb,
+                    max_total_mb=site.intake_max_total_mb,
+                    max_images=max_images,
+                ))
                 seen_reasons.add(key)
 
         needs_review_reason = "; ".join(unique_reasons)
@@ -393,6 +410,23 @@ class Command(BaseCommand):
                 )
             except Exception as exc:
                 logger.error("Failed to save image %s: %s", filename, exc)
+
+        # Forensic log: no HTTP request here, so keep the routing/auth headers.
+        record_access(
+            None, "STUDENT_REPORT", student_item=student_item,
+            subject_name=display_name, subject_email=from_email,
+            details={
+                "headers": {
+                    name: [decode_mime_header(v) for v in msg.get_all(name, [])]
+                    for name in (
+                        "Date", "Message-ID", "Return-Path", "Reply-To",
+                        "Received", "X-Originating-IP", "X-Mailer", "User-Agent",
+                        "Authentication-Results",
+                    )
+                    if msg.get_all(name)
+                },
+            },
+        )
 
         # §1.3.8 Mark as Seen AFTER DB commit
         mail.store(num, "+FLAGS", "\\Seen")
@@ -455,41 +489,22 @@ class Command(BaseCommand):
         image_count = item.images.count()
 
         if oversized:
-            subject = f'Action needed: your lost item report could not be fully processed'
-            body = (
-                f"Hi {first_name},\n\n"
-                "This is an automated message from TRACE — the TISB Lost & Found system.\n\n"
-                "We received your lost item report, but the combined size of the attached images "
-                "exceeded the 40 MB limit. Your report has been saved without images.\n\n"
-                f"Title: {item.title}\n"
-                f"Submitted at: {submitted_at_ist}\n\n"
-                "Please resend your report with smaller images (under 15 MB each, under 40 MB total), "
-                "or send a description-only email without attachments.\n\n"
-                "— TRACE, TISB Lost & Found"
+            site = get_site_settings()
+            subject, body, _ = render_email(
+                "report_acknowledgment_oversized",
+                first_name=first_name,
+                item_title=item.title,
+                submitted_at=submitted_at_ist,
+                max_image_mb=site.intake_max_image_mb,
+                max_total_mb=site.intake_max_total_mb,
             )
         else:
-            subject = f'Received: your lost item report — "{item.title}"'
-            body = (
-                f"Hi {first_name},\n\n"
-                "This is an automated confirmation that TRACE — the TISB Lost & Found system — "
-                "has received your lost item report.\n\n"
-                "Submission summary\n"
-                "------------------\n"
-                f"Title:        {item.title}\n"
-                f"Submitted at: {submitted_at_ist}\n"
-                f"Images:       {image_count} attached\n\n"
-                "What happens next\n"
-                "-----------------\n"
-                "1. Your report is now in the approval queue. A staff member will review it.\n"
-                "2. If approved, your report will appear on the \"Students' Lost Items\" page of TRACE, "
-                "visible to the school community.\n"
-                "3. If a staff member or another student matches your report to a found item, "
-                "you will be notified by email at this address.\n"
-                "4. To collect any matched item, you must come in person to the school reception. "
-                "Items will not be released to anyone other than the rightful owner, in person.\n\n"
-                "This is an automated message — do not reply to this email. "
-                "If you need to follow up, contact your Head of Year or the school reception.\n\n"
-                "— TRACE, TISB Lost & Found"
+            subject, body, _ = render_email(
+                "report_acknowledgment",
+                first_name=first_name,
+                item_title=item.title,
+                submitted_at=submitted_at_ist,
+                image_count=image_count,
             )
 
         try:

@@ -15,6 +15,12 @@ def analyze_item_images(files: Iterable) -> Mapping[str, str]:
     for a lost-and-found item based on uploaded images.
     Analyzes ALL provided images to get a comprehensive understanding of the item.
     """
+    from .site_settings import get_site_settings
+    site = get_site_settings()
+    if not site.ai_enabled:
+        logger.info("AI auto-fill is disabled in Settings; skipping vision analysis.")
+        return {}
+
     # Use Google Gemini API key
     api_key = getattr(settings, "GOOGLE_API_KEY", "")
     if not api_key:
@@ -52,8 +58,8 @@ def analyze_item_images(files: Iterable) -> Mapping[str, str]:
         logger.warning("No valid images to analyze")
         return {}
 
-    # Gemini API endpoint - using gemini-2.5-flash (available model from your API)
-    model_name = "gemini-2.5-flash"
+    # Gemini model is chosen in Settings → Uploads (validated to [a-z0-9.-])
+    model_name = site.ai_model
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
 
     # Update prompt to mention multiple images
