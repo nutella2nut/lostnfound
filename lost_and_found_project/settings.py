@@ -156,6 +156,7 @@ if database_url:
             ssl_require=True,
         )
     }
+    DATABASES["default"].get("OPTIONS", {}).pop("supa", None)
 else:
     DATABASES = {
         "default": {
