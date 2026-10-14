@@ -3,6 +3,8 @@
 Implements §1.3 email parsing rules with XOAUTH2 IMAP authentication (§1.9.9).
 """
 
+import base64
+import binascii
 import email
 import hashlib
 import imaplib
@@ -123,6 +125,61 @@ def is_image_attachment(part):
         ext = os.path.splitext(filename)[1].lower()
         return ext in IMAGE_EXTENSIONS
     return False
+
+
+# Inline images pasted into the body as <img src="data:image/...;base64,...">
+DATA_URI_IMAGE_RE = re.compile(
+    r"""data:image/([a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)""", re.IGNORECASE
+)
+
+
+# Inline images whose shorter side is below this are treated as signature
+# logos (e.g. the TISB logo) or tracking pixels, not photos of the item.
+MIN_INLINE_IMAGE_PX = 200
+
+
+def is_small_image(image_bytes):
+    """True if the image's shorter side is under MIN_INLINE_IMAGE_PX.
+
+    Unreadable images (e.g. HEIC without a Pillow plugin) return False so they're kept.
+    """
+    try:
+        from PIL import Image
+        width, height = Image.open(BytesIO(image_bytes)).size
+    except Exception:
+        return False
+    return min(width, height) < MIN_INLINE_IMAGE_PX
+
+
+def iter_email_images(msg):
+    """Yield (filename, bytes) for every image in the email.
+
+    Covers regular attachments, inline cid: images (multipart/related parts),
+    and images embedded in the HTML body as base64 data: URIs.
+    """
+    inline_count = 0
+    for part in msg.walk():
+        if is_image_attachment(part):
+            img_bytes = part.get_payload(decode=True) or b""
+            is_inline = "attachment" not in part.get("Content-Disposition", "").lower()
+            if is_inline and is_small_image(img_bytes):
+                continue  # signature logo / tracking pixel
+            filename = decode_mime_header(part.get_filename() or "")
+            if not filename:
+                inline_count += 1
+                filename = f"inline-{inline_count}.{part.get_content_subtype() or 'jpg'}"
+            yield filename, img_bytes
+        elif part.get_content_type() == "text/html" and "attachment" not in part.get("Content-Disposition", ""):
+            html = (part.get_payload(decode=True) or b"").decode("ascii", "ignore")
+            for match in DATA_URI_IMAGE_RE.finditer(html):
+                try:
+                    img_bytes = base64.b64decode(re.sub(r"\s+", "", match.group(2)))
+                except (binascii.Error, ValueError):
+                    continue
+                if is_small_image(img_bytes):
+                    continue  # signature logo / tracking pixel
+                inline_count += 1
+                yield f"inline-{inline_count}.{match.group(1).lower()}", img_bytes
 
 
 def connect_imap():
@@ -325,49 +382,43 @@ class Command(BaseCommand):
         images = []
         total_size = 0
         oversized_total = False
-        if msg.is_multipart():
-            for part in msg.walk():
-                if not is_image_attachment(part):
-                    continue
+        # Attachments, inline cid: images, and base64 data: URI images in the body
+        all_images = list(iter_email_images(msg))
+        for filename, img_bytes in all_images:
+            if not img_bytes:
+                continue
 
-                filename = decode_mime_header(part.get_filename() or "image.jpg")
-                img_bytes = part.get_payload(decode=True) or b""
-                if not img_bytes:
-                    continue
+            size = len(img_bytes)
 
-                size = len(img_bytes)
+            if size > max_image_size:
+                review_reasons.append("ATTACHMENT_OVERSIZED")
+                logger.info("Skipping oversized attachment (%d bytes): %s", size, filename)
+                continue
 
-                if size > max_image_size:
-                    review_reasons.append("ATTACHMENT_OVERSIZED")
-                    logger.info("Skipping oversized attachment (%d bytes): %s", size, filename)
-                    continue
+            total_size += size
+            if total_size > max_total_size:
+                oversized_total = True
+                review_reasons.append("TOTAL_OVERSIZED")
+                logger.info("Total attachment size exceeded %d MB", site.intake_max_total_mb)
+                break
 
-                total_size += size
-                if total_size > max_total_size:
-                    oversized_total = True
-                    review_reasons.append("TOTAL_OVERSIZED")
-                    logger.info("Total attachment size exceeded %d MB", site.intake_max_total_mb)
-                    break
+            if len(images) >= max_images:
+                review_reasons.append("TOO_MANY_IMAGES")
+                break
 
-                if len(images) >= max_images:
-                    review_reasons.append("TOO_MANY_IMAGES")
-                    break
+            # EXIF GPS stripping §1.3.4
+            cleaned_bytes, exif_ok = strip_exif_gps(img_bytes)
+            if not exif_ok:
+                review_reasons.append("EXIF_STRIP_FAILED")
+                cleaned_bytes = img_bytes
 
-                # EXIF GPS stripping §1.3.4
-                cleaned_bytes, exif_ok = strip_exif_gps(img_bytes)
-                if not exif_ok:
-                    review_reasons.append("EXIF_STRIP_FAILED")
-                    cleaned_bytes = img_bytes
-
-                images.append((filename, cleaned_bytes))
+            images.append((filename, cleaned_bytes))
 
         if oversized_total:
             images = []
             body += "\n\n[Note: combined attachment size exceeded 40 MB. Images were not attached to this submission.]"
 
-        n_total_attachments = sum(
-            1 for part in msg.walk() if is_image_attachment(part)
-        ) if msg.is_multipart() else 0
+        n_total_attachments = len(all_images)
 
         if n_total_attachments > max_images and "TOO_MANY_IMAGES" in review_reasons:
             body += f"\n\n[Note: this submission included {n_total_attachments} images; only the first {max_images} were attached.]"
