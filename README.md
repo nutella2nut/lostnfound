@@ -43,20 +43,20 @@ The app will be available at `http://localhost:8000`.
 | `EMAIL_HOST_USER` | SMTP user | -- |
 | `EMAIL_HOST_PASSWORD` | Unused under OAuth2 | -- |
 | `EMAIL_USE_TLS` | Use TLS | `True` |
-| `DEFAULT_FROM_EMAIL` | Fallback from address | -- |
+| `DEFAULT_FROM_EMAIL` | Optional; emails are sent from the mailbox in Settings → General & branding | -- |
 
 ### Email (IMAP Inbound)
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `LF_EMAIL_ADDRESS` | Mailbox address | -- |
+| `LF_EMAIL_ADDRESS` | Seeds the mailbox on a fresh database only; edit it in Settings → General & branding | -- |
 | `LF_EMAIL_PASSWORD` | Unused under OAuth2 | -- |
 | `LF_IMAP_HOST` | IMAP server | `outlook.office365.com` |
 | `LF_IMAP_PORT` | IMAP port | `993` |
 | `LF_IMAP_MAILBOX` | IMAP folder | `INBOX` |
-| `LF_ALLOWED_SENDER_DOMAIN` | Allowed sender domain | `@tisb.ac.in` |
-| `LF_EMAIL_DISPLAY_NAME` | Display name for outgoing emails | `TRACE Lost & Found` |
-| `LF_BROADCAST_RECIPIENTS` | Comma-separated broadcast recipients | -- |
+| `LF_ALLOWED_SENDER_DOMAIN` | Seed only; edit in Settings → Claims | `@tisb.ac.in` |
+| `LF_EMAIL_DISPLAY_NAME` | Seed only; edit in Settings → General & branding | `TRACE Lost & Found` |
+| `LF_BROADCAST_RECIPIENTS` | Seed only; edit in Settings → Broadcasts | -- |
 
 ### Microsoft 365 OAuth2
 

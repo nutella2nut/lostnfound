@@ -62,10 +62,12 @@ class SettingsPageTests(TestCase):
         data = {
             "site_name": "TRACE", "school_name": "TISB", "email_signoff": "— Bye",
             "sender_display_name": "TRACE Lost & Found", "contact_email": "",
+            "lf_email_address": "LF@tisb.ac.in",
             "announcement_enabled": "on", "announcement_text": "Closed Friday",
         }
         self.client.post("/staff/settings/general/", data)
         self.assertEqual(get_site_settings().email_signoff, "— Bye")
+        self.assertEqual(get_site_settings().lf_email_address, "lf@tisb.ac.in")
         log = AccessAuditLog.objects.get(action="SETTINGS_CHANGE")
         self.assertEqual(log.details["section"], "general")
         self.assertEqual(log.details["changes"]["email_signoff"][1], "— Bye")
@@ -215,6 +217,42 @@ class BroadcastSettingsTests(TestCase):
         self.client.post(f"/staff/broadcast/found/{self.item.pk}/")
         self.client.post(f"/staff/broadcast/found/{self.item.pk}/")
         self.assertEqual(BroadcastLog.objects.count(), 1)
+
+
+@override_settings(LF_EMAIL_ADDRESS="seed@tisb.ac.in", EMAIL_HOST="smtp.test",
+                   LF_BROADCAST_RECIPIENTS_LIST=["testlf@tisb.ac.in"])
+class MailboxSettingsTests(TestCase):
+    def setUp(self):
+        self.client.force_login(User.objects.create_superuser("su", "su@tisb.ac.in", "pw"))
+
+    def test_seeded_from_env(self):
+        self.assertEqual(get_site_settings().lf_email_address, "seed@tisb.ac.in")
+
+    def test_required_on_general_page(self):
+        get_site_settings()
+        data = {"site_name": "TRACE", "school_name": "TISB", "email_signoff": "x",
+                "sender_display_name": "TRACE", "contact_email": "", "lf_email_address": ""}
+        response = self.client.post("/staff/settings/general/", data)
+        self.assertEqual(response.status_code, 200)  # re-rendered with an error
+        self.assertEqual(get_site_settings().lf_email_address, "seed@tisb.ac.in")
+
+    def test_edited_mailbox_used_for_broadcasts_and_report_page(self):
+        update_settings(lf_email_address="lf@tisb.ac.in")
+        self.assertContains(self.client.get("/how-to-report-lost/"), "lf@tisb.ac.in")
+
+        from django.core import mail
+        self.client.post(f"/staff/broadcast/found/{make_item().pk}/")
+        sent = mail.outbox[-1]
+        self.assertIn("<lf@tisb.ac.in>", sent.from_email)
+        self.assertEqual(sent.bcc, ["testlf@tisb.ac.in"])
+
+    @override_settings(MS_OAUTH_CLIENT_ID="", LF_EMAIL_PASSWORD="pw")
+    @patch("inventory.management.commands.check_emails.imaplib.IMAP4_SSL")
+    def test_edited_mailbox_used_for_inbox_login(self, imap):
+        from inventory.management.commands.check_emails import connect_imap
+        update_settings(lf_email_address="lf@tisb.ac.in")
+        connect_imap()
+        imap.return_value.login.assert_called_once_with("lf@tisb.ac.in", "pw")
 
 
 class PrivacySettingsTests(TestCase):

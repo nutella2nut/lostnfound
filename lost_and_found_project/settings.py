@@ -301,10 +301,9 @@ else:
         "The console email backend has been removed to prevent silent failures."
     )
 
-_default_from = os.environ.get("DEFAULT_FROM_EMAIL", os.environ.get("LF_EMAIL_ADDRESS", ""))
-if not _default_from:
-    raise RuntimeError("DEFAULT_FROM_EMAIL or LF_EMAIL_ADDRESS must be set.")
-DEFAULT_FROM_EMAIL = _default_from
+# The lost & found mailbox (From address, IMAP inbox) is set in Settings → General
+# & branding. LF_EMAIL_ADDRESS below only seeds it on a fresh database.
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", os.environ.get("LF_EMAIL_ADDRESS", "webmaster@localhost"))
 
 #
 # Incoming email (IMAP) configuration for student submissions

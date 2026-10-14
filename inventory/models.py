@@ -497,6 +497,10 @@ class SiteSettings(models.Model):
         blank=True,
         help_text="Address shown to users. Leave blank to use the lost & found mailbox.",
     )
+    lf_email_address = models.EmailField(
+        blank=True,
+        help_text="Mailbox students email reports to; also the From address on all emails.",
+    )
     announcement_enabled = models.BooleanField(default=False)
     announcement_text = models.TextField(blank=True)
 
@@ -598,7 +602,7 @@ class SiteSettings(models.Model):
 
     @property
     def public_contact_email(self):
-        return self.contact_email or getattr(settings, "LF_EMAIL_ADDRESS", "")
+        return self.contact_email or self.lf_email_address
 
 
 class EmailTemplate(models.Model):

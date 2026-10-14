@@ -39,8 +39,11 @@ class MicrosoftOAuth2EmailBackend(DjangoSMTPBackend):
                 self.connection.ehlo()
 
             # XOAUTH2 SASL: user=<email>\x01auth=Bearer <token>\x01\x01
+            from inventory.site_settings import get_site_settings
+
             access_token = get_access_token()
-            auth_string = f"user={self.username}\x01auth=Bearer {access_token}\x01\x01"
+            username = get_site_settings().lf_email_address or self.username
+            auth_string = f"user={username}\x01auth=Bearer {access_token}\x01\x01"
             auth_b64 = base64.b64encode(auth_string.encode()).decode()
             code, response = self.connection.docmd("AUTH", "XOAUTH2 " + auth_b64)
             if code != 235:

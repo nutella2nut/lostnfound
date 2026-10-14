@@ -230,11 +230,19 @@ class _SettingsForm(forms.ModelForm):
 
 
 class GeneralSettingsForm(_SettingsForm):
+    lf_email_address = forms.EmailField(
+        label="Lost & found mailbox",
+        help_text=(
+            "Students email lost-item reports here, and every TRACE email is sent from it. "
+            "The Microsoft account connected on the Status page must be this same mailbox."
+        ),
+    )
+
     class Meta:
         model = SiteSettings
         fields = [
             "site_name", "school_name", "email_signoff", "sender_display_name",
-            "contact_email", "announcement_enabled", "announcement_text",
+            "lf_email_address", "contact_email", "announcement_enabled", "announcement_text",
         ]
         labels = {
             "email_signoff": "Email sign-off",
@@ -242,6 +250,9 @@ class GeneralSettingsForm(_SettingsForm):
             "contact_email": "Public contact address",
             "announcement_enabled": "Show announcement banner on every page",
         }
+
+    def clean_lf_email_address(self):
+        return self.cleaned_data["lf_email_address"].strip().lower()
 
     def clean(self):
         data = super().clean()

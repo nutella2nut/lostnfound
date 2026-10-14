@@ -187,18 +187,19 @@ def connect_imap():
     imap_host = settings.LF_IMAP_HOST
     imap_port = int(settings.LF_IMAP_PORT)
 
+    mailbox = get_site_settings().lf_email_address
     mail = imaplib.IMAP4_SSL(imap_host, imap_port)
 
     if getattr(settings, "MS_OAUTH_CLIENT_ID", ""):
         from inventory.ms_oauth import get_access_token, force_refresh
         access_token = get_access_token()
-        auth_string = f"user={settings.LF_EMAIL_ADDRESS}\x01auth=Bearer {access_token}\x01\x01"
+        auth_string = f"user={mailbox}\x01auth=Bearer {access_token}\x01\x01"
         try:
             mail.authenticate("XOAUTH2", lambda _: auth_string.encode())
         except imaplib.IMAP4.error:
             logger.warning("XOAUTH2 auth failed, forcing refresh and retrying...")
             access_token = force_refresh()
-            auth_string = f"user={settings.LF_EMAIL_ADDRESS}\x01auth=Bearer {access_token}\x01\x01"
+            auth_string = f"user={mailbox}\x01auth=Bearer {access_token}\x01\x01"
             mail.authenticate("XOAUTH2", lambda _: auth_string.encode())
     else:
         email_password = settings.LF_EMAIL_PASSWORD
@@ -207,7 +208,7 @@ def connect_imap():
                 "Neither MS_OAUTH_CLIENT_ID nor LF_EMAIL_PASSWORD is set. "
                 "Cannot authenticate to IMAP."
             )
-        mail.login(settings.LF_EMAIL_ADDRESS, email_password)
+        mail.login(mailbox, email_password)
 
     return mail
 
@@ -221,11 +222,13 @@ class Command(BaseCommand):
                             help="Run forever with SECONDS sleep between cycles")
 
     def handle(self, *args, **options):
-        email_address = getattr(settings, "LF_EMAIL_ADDRESS", "")
+        email_address = get_site_settings().lf_email_address
         imap_host = getattr(settings, "LF_IMAP_HOST", "")
 
         if not email_address or not imap_host:
-            self.stderr.write("LF_EMAIL_ADDRESS and LF_IMAP_HOST must be set.")
+            self.stderr.write(
+                "Set the lost & found mailbox in Settings → General & branding, and LF_IMAP_HOST."
+            )
             return
 
         loop_seconds = options.get("loop", 0)

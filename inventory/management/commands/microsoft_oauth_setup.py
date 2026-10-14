@@ -9,6 +9,8 @@ import webbrowser
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from inventory.site_settings import get_site_settings
+
 logger = logging.getLogger("inventory.microsoft_oauth_setup")
 
 
@@ -148,7 +150,8 @@ class Command(BaseCommand):
         account_email = (
             id_token_claims.get("preferred_username")
             or id_token_claims.get("email")
-            or getattr(settings, "LF_EMAIL_ADDRESS", "unknown@example.com")
+            or get_site_settings().lf_email_address
+            or "unknown@example.com"
         )
 
         # Encrypt and store

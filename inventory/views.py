@@ -55,9 +55,8 @@ def send_system_email(subject: str, message: str, recipient_list: list[str]) -> 
     if not recipient_list:
         return
 
-    if not getattr(settings, "EMAIL_HOST", "") or not getattr(
-        settings, "EMAIL_HOST_USER", ""
-    ):
+    mailbox = get_site_settings().lf_email_address
+    if not getattr(settings, "EMAIL_HOST", "") or not mailbox:
         # Email not configured – do nothing.
         return
 
@@ -66,9 +65,7 @@ def send_system_email(subject: str, message: str, recipient_list: list[str]) -> 
             send_mail(
                 subject=subject,
                 message=message,
-                from_email=getattr(
-                    settings, "DEFAULT_FROM_EMAIL", settings.EMAIL_HOST_USER
-                ),
+                from_email=mailbox,
                 recipient_list=recipient_list,
                 fail_silently=True,
             )
@@ -816,7 +813,7 @@ class RejectItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
                     item_title=item.title,
                     submitted_at=submitted_at_ist,
                     reason_line=reason_line,
-                    report_email=settings.LF_EMAIL_ADDRESS,
+                    report_email=get_site_settings().lf_email_address,
                 )
                 send_system_email(subject=subject, message=body, recipient_list=[item.email_from])
             messages.success(
@@ -904,7 +901,7 @@ class BroadcastItemView(LoginRequiredMixin, SuperUserRequiredMixin, View):
             return redirect(request.path)
 
         subject, body = self._compose_email(request, item, kind)
-        email_address = getattr(settings, "LF_EMAIL_ADDRESS", settings.EMAIL_HOST_USER)
+        email_address = site.lf_email_address
         display_name = site.sender_display_name
         from_email = f"{display_name} <{email_address}>"
 
@@ -1087,7 +1084,7 @@ class HowToReportLostView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["email_address"] = getattr(settings, "LF_EMAIL_ADDRESS", "")
+        ctx["email_address"] = get_site_settings().lf_email_address
         return ctx
 
 
@@ -1662,7 +1659,7 @@ class SettingsStatusView(LoginRequiredMixin, SuperUserRequiredMixin, View):
         checks = [
             ("Outgoing email backend", settings.EMAIL_BACKEND.rsplit(".", 1)[-1], None),
             ("SMTP server (EMAIL_HOST)", getattr(settings, "EMAIL_HOST", "") or "—", None),
-            ("Lost & found mailbox (LF_EMAIL_ADDRESS)", getattr(settings, "LF_EMAIL_ADDRESS", "") or "—", None),
+            ("Lost & found mailbox (General & branding)", get_site_settings().lf_email_address or "—", None),
             ("Mailbox password (LF_EMAIL_PASSWORD)", None, bool(getattr(settings, "LF_EMAIL_PASSWORD", ""))),
             ("SMTP password (EMAIL_HOST_PASSWORD)", None, bool(getattr(settings, "EMAIL_HOST_PASSWORD", ""))),
             ("Microsoft OAuth app (MS_OAUTH_CLIENT_ID)", None, bool(getattr(settings, "MS_OAUTH_CLIENT_ID", ""))),

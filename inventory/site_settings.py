@@ -29,6 +29,7 @@ def get_site_settings():
     if obj is None:
         obj = SiteSettings(
             pk=1,
+            lf_email_address=getattr(settings, "LF_EMAIL_ADDRESS", ""),
             allowed_email_domain=getattr(settings, "LF_ALLOWED_SENDER_DOMAIN", "") or "@tisb.ac.in",
             broadcast_recipients="\n".join(getattr(settings, "LF_BROADCAST_RECIPIENTS_LIST", [])),
             sender_display_name=getattr(settings, "LF_EMAIL_DISPLAY_NAME", "") or "TRACE Lost & Found",

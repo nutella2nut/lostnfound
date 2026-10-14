@@ -25,10 +25,16 @@ class MicrosoftOAuth2EmailBackendTests(TestCase):
         mock_conn.docmd.return_value = (235, b"Authentication successful")
         mock_smtp_cls.return_value = mock_conn
 
+        # The mailbox from Settings → General wins over the env-derived username.
+        from inventory.site_settings import get_site_settings
+        site = get_site_settings()
+        site.lf_email_address = "test@tisb.ac.in"
+        site.save()
+
         backend = MicrosoftOAuth2EmailBackend(
             host="smtp-mail.outlook.com",
             port=587,
-            username="test@tisb.ac.in",
+            username="old-env@tisb.ac.in",
             password="",
             use_tls=True,
             use_ssl=False,
