@@ -31,6 +31,17 @@ if os.environ.get("DATABASE_URL"):
     if railway_domain and railway_domain not in allowed_hosts_list:
         allowed_hosts_list.append(railway_domain)
 
+# Vercel exposes both the deployment-specific hostname and the stable production
+# hostname without a URL scheme. Trust those exact hosts instead of using a
+# wildcard for every vercel.app deployment.
+vercel_domains = {
+    os.environ.get("VERCEL_URL", "").strip(),
+    os.environ.get("VERCEL_PROJECT_PRODUCTION_URL", "").strip(),
+}
+for domain in vercel_domains:
+    if domain and domain not in allowed_hosts_list:
+        allowed_hosts_list.append(domain)
+
 # Allow additional hosts via DJANGO_ALLOWED_HOSTS environment variable
 env_hosts = os.environ.get("DJANGO_ALLOWED_HOSTS", "")
 if env_hosts:
@@ -82,7 +93,17 @@ if is_railway:
             if railway_origin not in csrf_trusted_origins_list:
                 csrf_trusted_origins_list.append(railway_origin)
 
-# Allow additional origins via DJANGO_CSRF_TRUSTED_ORIGINS environment variable
+# Add exact Vercel deployment origins.
+for domain in vercel_domains:
+    if domain:
+        vercel_origin = f"https://{domain}"
+        if vercel_origin not in csrf_trusted_origins_list:
+            csrf_trusted_origins_list.append(vercel_origin)
+
+if os.environ.get("VERCEL") == "1":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Allow additional origins via DJANGO_CSRF_TRUSTED_ORIGINS.
 env_origins = os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "")
 if env_origins:
     for origin in env_origins.split(","):
@@ -95,6 +116,11 @@ if env_origins:
                 csrf_trusted_origins_list.append(origin)
 
 CSRF_TRUSTED_ORIGINS: list[str] = csrf_trusted_origins_list
+
+# Authentication cookies are only sent over HTTPS in deployed environments.
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 INSTALLED_APPS = [
     "django.contrib.admin",
