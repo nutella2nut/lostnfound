@@ -153,7 +153,17 @@ python manage.py check_emails          # Run once
 python manage.py check_emails --loop   # Poll continuously (every 2 minutes)
 ```
 
-Recommended: set up a Railway cron job to run `python manage.py check_emails` every 2 minutes.
+In production (Vercel), `.github/workflows/check-emails.yml` runs every 5 minutes (polling 5 times, a minute apart) and calls
+`POST /internal/check-emails/` with `Authorization: Bearer $CRON_SECRET`, which runs one poll.
+Setup:
+
+1. Generate a secret (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
+2. Vercel → Project → Settings → Environment Variables: add `CRON_SECRET`, then redeploy.
+3. GitHub → repo Settings → Secrets and variables → Actions: add `CRON_SECRET` (same value) and
+   `SITE_URL` (e.g. `https://your-app.vercel.app`, no trailing slash).
+4. Actions tab → "Check lost & found mailbox" → Run workflow, to test it.
+
+GitHub may delay scheduled runs by a few minutes, and pauses them after 60 days without repo activity.
 
 The command polls the configured IMAP mailbox, parses student emails, creates `StudentLostItem` entries, and sends acknowledgment emails.
 

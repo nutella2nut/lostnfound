@@ -3,8 +3,8 @@ from .audit import record_access
 from .models import Item, StudentLostItem
 from .site_settings import get_site_settings
 
-# Asset requests aren't user actions.
-SKIP_PREFIXES = ("/static/", "/media/", "/favicon.ico", "/robots.txt")
+# Asset requests and the scheduled mailbox poll aren't user actions.
+SKIP_PREFIXES = ("/static/", "/media/", "/favicon.ico", "/robots.txt", "/internal/")
 
 
 class AuditLogMiddleware:

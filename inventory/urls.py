@@ -35,6 +35,8 @@ urlpatterns = [
     path("staff/settings/emails/<str:key>/", views.EmailTemplateEditView.as_view(), name="settings_email_edit"),
     path("staff/settings/status/", views.SettingsStatusView.as_view(), name="settings_status"),
     path("staff/settings/<str:section>/", views.SettingsSectionView.as_view(), name="settings_section"),
+    # Scheduled mailbox poll (GitHub Actions cron)
+    path("internal/check-emails/", views.check_emails_cron, name="check_emails_cron"),
     # Staff User Management (§6)
     path("staff/users/", views.UserManagementListView.as_view(), name="user_management_list"),
     path("staff/users/new/", views.UserManagementCreateView.as_view(), name="user_management_create"),

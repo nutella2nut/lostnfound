@@ -317,6 +317,9 @@ LF_IMAP_MAILBOX = os.environ.get("LF_IMAP_MAILBOX", "INBOX")
 LF_ALLOWED_SENDER_DOMAIN = os.environ.get("LF_ALLOWED_SENDER_DOMAIN", "@tisb.ac.in")
 LF_EMAIL_DISPLAY_NAME = os.environ.get("LF_EMAIL_DISPLAY_NAME", "TRACE Lost & Found")
 
+# Shared secret for /internal/check-emails/, called on a schedule by GitHub Actions.
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
+
 # Broadcast recipients (§2.2)
 _broadcast_raw = os.environ.get("LF_BROADCAST_RECIPIENTS", "raadvait@tisb.ac.in,nsiddharth@tisb.ac.in")
 LF_BROADCAST_RECIPIENTS_LIST = list(dict.fromkeys(

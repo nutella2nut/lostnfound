@@ -1,3 +1,4 @@
+import hmac
 import logging
 import os
 import threading
@@ -7,6 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.management import call_command
 from django.core.mail import send_mail, EmailMessage, EmailMultiAlternatives
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -219,6 +221,20 @@ def analyze_images_ajax(request):
     
     suggestions = analyze_item_images(uploaded_images)
     return JsonResponse(suggestions)
+
+
+@require_http_methods(["POST"])
+@csrf_exempt
+def check_emails_cron(request):
+    """Run one mailbox poll. Called every few minutes by .github/workflows/check-emails.yml."""
+    expected = f"Bearer {settings.CRON_SECRET}"
+    if not settings.CRON_SECRET or not hmac.compare_digest(
+        request.headers.get("Authorization", ""), expected
+    ):
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    call_command("check_emails")
+    return JsonResponse({"status": "ok"})
 
 
 class ItemUploadConfirmView(LoginRequiredMixin, StaffRequiredMixin, View):

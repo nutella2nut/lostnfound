@@ -1,0 +1,30 @@
+# Polls the lost & found mailbox for new student reports. Vercel's free plan
+# can't run cron jobs often enough, so GitHub Actions calls the app instead.
+#
+# Repo secrets needed (Settings → Secrets and variables → Actions):
+#   SITE_URL     e.g. https://lostnfound.vercel.app (no trailing slash)
+#   CRON_SECRET  same value as the CRON_SECRET env var on Vercel
+#
+# GitHub's minimum schedule is 5 minutes, so each run polls 5 times, a minute
+# apart (temporary; for faster testing).
+name: Check lost & found mailbox
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check-emails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - run: |
+          for i in 1 2 3 4 5; do
+            curl --fail-with-body --silent --show-error --max-time 50 \
+              -X POST \
+              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              "${{ secrets.SITE_URL }}/internal/check-emails/"
+            echo
+            if [ "$i" -lt 5 ]; then sleep 60; fi
+          done

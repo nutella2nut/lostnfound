@@ -172,3 +172,28 @@ class ApproveStudentItemInlineEditTests(TestCase):
 
 
 
+
+
+class CheckEmailsCronTests(TestCase):
+    url = "/internal/check-emails/"
+
+    @patch("inventory.views.call_command")
+    def test_runs_check_emails_with_valid_secret(self, mock_call):
+        with self.settings(CRON_SECRET="s3cret"):
+            response = self.client.post(self.url, HTTP_AUTHORIZATION="Bearer s3cret")
+        self.assertEqual(response.status_code, 200)
+        mock_call.assert_called_once_with("check_emails")
+
+    @patch("inventory.views.call_command")
+    def test_rejects_wrong_secret(self, mock_call):
+        with self.settings(CRON_SECRET="s3cret"):
+            response = self.client.post(self.url, HTTP_AUTHORIZATION="Bearer nope")
+        self.assertEqual(response.status_code, 403)
+        mock_call.assert_not_called()
+
+    @patch("inventory.views.call_command")
+    def test_rejects_when_secret_not_configured(self, mock_call):
+        with self.settings(CRON_SECRET=""):
+            response = self.client.post(self.url, HTTP_AUTHORIZATION="Bearer ")
+        self.assertEqual(response.status_code, 403)
+        mock_call.assert_not_called()
