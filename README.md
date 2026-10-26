@@ -153,7 +153,7 @@ python manage.py check_emails          # Run once
 python manage.py check_emails --loop   # Poll continuously (every 2 minutes)
 ```
 
-In production (Vercel), `.github/workflows/check-emails.yml` runs every 5 minutes (polling 5 times, a minute apart) and calls
+In production (Vercel), `.github/workflows/check-emails.yml` runs every 15 minutes and calls
 `POST /internal/check-emails/` with `Authorization: Bearer $CRON_SECRET`, which runs one poll.
 Setup:
 
