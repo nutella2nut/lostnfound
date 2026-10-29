@@ -1,5 +1,5 @@
-# Polls the lost & found mailbox for new student reports. Vercel's free plan
-# can't run cron jobs often enough, so GitHub Actions calls the app instead.
+# Manually polls the lost & found mailbox (Actions → Run workflow). The
+# 15-minute schedule runs on cron-job.org, which calls the same endpoint.
 #
 # Repo secrets needed (Settings → Secrets and variables → Actions):
 #   SITE_URL     e.g. https://lostnfound.vercel.app (no trailing slash)
@@ -7,8 +7,6 @@
 name: Check lost & found mailbox
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
